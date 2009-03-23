@@ -1,4 +1,5 @@
 require 'rubygems' # this will not be required in Ruby 1.9
+require 'active_support'
 ############################# callback event ###########################
 class Hash
   # Recursively replace key names that should be strings with strings.
