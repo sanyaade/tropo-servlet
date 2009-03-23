@@ -177,10 +177,11 @@ public class Configuration {
 
   @SuppressWarnings("unchecked")
   private Configuration(final InputStream i) throws JDOMException, IOException, ClassNotFoundException {
-    _scriptHeaders.put("js", "com/voxeo/tropo/javascript/shim.js");
-    _scriptHeaders.put("groovy", "com/voxeo/tropo/groovy/shim.groovy");
-    _scriptHeaders.put("jython", "com/voxeo/tropo/jython/shim.jy");
-    _scriptHeaders.put("php", "com/voxeo/tropo/php/shim.php");
+    _scriptHeaders.put("js", "com/voxeo/tropo/javascript/tropo.js");
+    _scriptHeaders.put("groovy", "com/voxeo/tropo/groovy/tropo.groovy");
+    _scriptHeaders.put("jython", "com/voxeo/tropo/jython/tropo.jy");
+    _scriptHeaders.put("php", "com/voxeo/tropo/php/tropo.php");
+    _scriptHeaders.put("jruby", "com/voxeo/tropo/jruby/tropo.rb");
     final SAXBuilder b = new SAXBuilder();
     b.setValidation(false);
     final Element f = b.build(i).getRootElement();
