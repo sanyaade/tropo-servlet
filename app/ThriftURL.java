@@ -9,16 +9,16 @@ import com.voxeo.tropo.thrift.BindStruct;
 public class ThriftURL implements ApplicationURL {
   String _host;
   int _port;
-  String _secrete;
+  String _secret;
 
   ThriftURL(BindStruct bind) {
-    _host = bind.getLocalHost();
-    _port = bind.getLocalPort();
-    _secrete = bind.getSecret();
+    _host = bind.getHost();
+    _port = bind.getPort();
+    _secret = bind.getSecret();
   }
   
   public String getAuthority() {
-    return _secrete;
+    return _secret;
   }
 
   public String getFile() {
@@ -74,6 +74,11 @@ public class ThriftURL implements ApplicationURL {
 
   public URL toURL() {
     throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public String toString() {
+    return "thrift://" + getHost() + ":" + getPort() + "?" + getAuthority();
   }
 
 }

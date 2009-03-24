@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -105,6 +106,15 @@ public abstract class AbstractApplicationManager implements ApplicationManager {
 
   protected void putCached(final Object key, final Application app) {
     _cache.put(key, app);
+  }
+  
+  protected void clearCached(final Application app) {
+    for(Iterator<Map.Entry<Object, Application>> i = _cache.entrySet().iterator(); i.hasNext();) {
+      Map.Entry<Object, Application> entry = i.next();
+      if (app.equals(entry.getValue())) {
+        i.remove();
+      }
+    }
   }
 
   public Application get(final URI uri) throws InvalidApplicationException, RedirectException {

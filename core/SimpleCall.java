@@ -560,7 +560,7 @@ public class SimpleCall implements CallImpl {
   protected void updateInvite(final SipServletRequest req) {
     _invite = req;
     _sipSession = req.getSession();
-    _sipSession.setAttribute(Call.INST, this);
+    _sipSession.setAttribute(CallImpl.INST, this);
   }
 
   protected void transferCleanup(final SimpleCall call) {

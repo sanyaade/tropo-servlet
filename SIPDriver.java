@@ -173,9 +173,6 @@ public class SIPDriver extends SipServlet {
     if (inst != null) {
       inst.terminate();
     }
-    else {
-      LOG.error("No matching Application Instance is found.");
-    }
   }
 
   @Override
@@ -301,7 +298,7 @@ public class SIPDriver extends SipServlet {
 
   protected CallImpl findCall(final SipServletMessage message) {
     Utils.setLogContext(message);
-    final CallImpl call = (CallImpl) message.getSession().getAttribute(Call.INST);
+    final CallImpl call = (CallImpl) message.getSession().getAttribute(CallImpl.INST);
     if (call == null) {
       LOG.warn("No call is found for " + message);
     }

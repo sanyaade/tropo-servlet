@@ -20,7 +20,6 @@ import com.micromethod.common.util.annotation.StringPart;
 import com.voxeo.tropo.app.ApplicationManager;
 import com.voxeo.tropo.app.MockAppMgr;
 import com.voxeo.tropo.util.ConfigurationItem;
-import com.voxeo.tropo.util.Utils;
 
 public class Configuration {
   public static final Logger LOG = Logger.getLogger(Configuration.class);
@@ -141,29 +140,6 @@ public class Configuration {
     }
     try {
       INSTANCE = new Configuration(i);
-      String home = Utils.pythonHome();
-      if (home != null) {
-        Configuration.LOG.info("python.home is " + home);
-      }
-      else {
-        Configuration.LOG.error("JYTHON_HOME is NOT defined or the referred directory does not exist!");
-      }
-
-      home = Utils.rubyHome();
-      if (home != null) {
-        Configuration.LOG.info("jruby.home is " + home);
-      }
-      else {
-        Configuration.LOG.error("JRUBY_HOME is NOT defined or the referred directory does not exist!");
-      }
-
-      home = Utils.getAppDir();
-      if (home != null) {
-        Configuration.LOG.info("Tropo app dir is " + home);
-      }
-      else {
-        Configuration.LOG.error("TROPO_APP_HOME is NOT defined or the referred directory does not exist!");
-      }
     }
     finally {
       i.close();

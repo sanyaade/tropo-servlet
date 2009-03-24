@@ -20,6 +20,7 @@ import javax.servlet.sip.SipSession;
 import org.apache.log4j.Logger;
 
 import com.voxeo.tropo.core.Call;
+import com.voxeo.tropo.core.CallImpl;
 import com.voxeo.tropo.core.IncomingCall;
 import com.voxeo.tropo.core.SimpleCallFactory;
 import com.voxeo.tropo.core.SimpleIncomingCall;
@@ -215,7 +216,7 @@ public class SimpleInstance extends AbstractInstance {
                 LOG.debug(appSession + " has " + session);
               }
               if (session != null && session.isValid()) {
-                final Call c = (Call) session.getAttribute(Call.INST);
+                final Call c = (Call) session.getAttribute(CallImpl.INST);
                 if (c != null) {
                   c.hangup();
                 }

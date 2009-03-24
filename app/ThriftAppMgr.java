@@ -1,12 +1,18 @@
 package com.voxeo.tropo.app;
 
-import java.util.Iterator;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
+import javax.script.ScriptException;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.sip.SipServletRequest;
 import javax.servlet.sip.SipURI;
 import javax.servlet.sip.TelURL;
 import javax.servlet.sip.URI;
@@ -16,16 +22,19 @@ import org.apache.thrift.TException;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
+import org.apache.thrift.transport.TServerTransport;
 
 import com.micromethod.common.util.StringUtils;
+import com.voxeo.tropo.core.CallImpl;
+import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
 import com.voxeo.tropo.thrift.BindStruct;
-import com.voxeo.tropo.thrift.NetworkException;
 import com.voxeo.tropo.thrift.PromptStruct;
 import com.voxeo.tropo.thrift.SystemException;
+import com.voxeo.tropo.thrift.TransferStruct;
+import com.voxeo.tropo.thrift.TropoException;
 import com.voxeo.tropo.thrift.TropoService;
-import com.voxeo.tropo.thrift.UserException;
 import com.voxeo.webcore.dns.URLByNumberGet;
 import com.voxeo.webcore.dns.URLByTokenGet;
 import com.voxeo.webcore.dns.VoxeoDNSException;
@@ -33,7 +42,9 @@ import com.voxeo.webcore.dns.VoxeoDNSException;
 public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Runnable, TropoService.Iface {
   private static final Logger LOG = Logger.getLogger(ThriftAppMgr.class);
   
-  protected Map<Integer, Map<String, RemoteApplication>> _apps;
+  static final String DEAULT_APPLICATION_ID = "*";
+  
+  protected ConcurrentMap<Integer, ConcurrentMap<String, RemoteApplication>> _apps;
   
   protected Map<String, RemoteApplication> _index;
   
@@ -41,9 +52,13 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     
   protected TServer _server;
   
+  protected TServerTransport _transport;
+  
   protected List<SipURI> _contacts;
   
   protected int _serverPort = 9090;
+  
+  protected ApplicationCollector _collector;
 
   @Override
   protected Application findApplication(URI uri) throws InvalidApplicationException, RedirectException {
@@ -110,11 +125,14 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
     super.init(context, paras);
     _contacts = (List<SipURI>) context.getAttribute("javax.servlet.sip.outboundInterfaces");
-    _apps = new ConcurrentHashMap<Integer, Map<String, RemoteApplication>>();
+    _apps = new ConcurrentHashMap<Integer, ConcurrentMap<String, RemoteApplication>>();
     _index = new ConcurrentHashMap<String, RemoteApplication>();
     try {
-      _server = new TThreadPoolServer(new TropoService.Processor(this), new TServerSocket(_serverPort));
+      _transport = new TServerSocket(_serverPort);
+      _server = new TThreadPoolServer(new TropoService.Processor(this), _transport);
       new Thread(this, "Thrift").start();
+      _collector = new ApplicationCollector();
+      new Thread(_collector, "ApplicationCollector").start();
     }
     catch(Exception e) {
       LOG.error(e.toString(), e);
@@ -124,8 +142,10 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   
   @Override
   public void dispose() {
+    _transport.close();
     _server.stop();
-    _apps = null;
+    _collector.stop();
+    _apps.clear();
     super.dispose();
   }
 
@@ -139,7 +159,8 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     LOG.info("Stopping Thrift service on port " + _serverPort);
   }
 
-  public void answer(String key, String id, int timeout) throws NetworkException, AuthenticationException, UserException, SystemException, TException {
+  public void answer(String key, String id, int timeout) throws AuthenticationException, TropoException, SystemException, TException {
+    LOG.info("answer("+key+", "+id+", "+timeout+")");
     RemoteApplication app = _index.get(key);
     if (app != null && app instanceof ThriftApplication) {
       ((ThriftApplication)app).answer(id, timeout);
@@ -148,60 +169,62 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
       throw new AuthenticationException("Invalid key: " + key);
     }
   }
+  
+  protected void authenticate(BindStruct bind) throws AuthenticationException, SystemException {
+    if (bind.getAccountId() <= 0 || StringUtils.isEmpty(bind.getApplicationId())) {
+      throw new SystemException("Invalid account or application.");
+    }
+    //TODO authentication    
+  }
 
-  public String bind(BindStruct bind) throws NetworkException, AuthenticationException, BindException, TException, UserException, SystemException {
+  public String bind(BindStruct bind) throws AuthenticationException, BindException, TException, SystemException {
     if (LOG.isDebugEnabled()) {
       LOG.debug("bind-->" + bind.toString());
     }
+    authenticate(bind);
     int accountId = bind.getAccountId();
     String applicationId = bind.getApplicationId();
-    if (accountId <= 0 || StringUtils.isEmpty(applicationId)) {
-      throw new UserException("Invalid account or application.");
-    }
-    // authentication
-    Application oldapp = getApplication(accountId, applicationId);
+    RemoteApplication oldapp = getApplication(accountId, applicationId);
     RemoteApplication newapp = new ThriftApplication(this, new ThriftURL(bind), accountId, applicationId, _contacts);
     putApplication(newapp);
     if (oldapp != null) {
+      removeApplication(oldapp);
       oldapp.dispose();      
     }
     return newapp.getApplicationKey();
   }
   
-  RemoteApplication getApplication(int accountId, String applicationId) {
-    Map<String, RemoteApplication> map = _apps.get(accountId);
+  protected RemoteApplication getApplication(int accountId, String applicationId) {
+    ConcurrentMap<String, RemoteApplication> map = _apps.get(accountId);
     if (map == null) {
       map = new ConcurrentHashMap<String, RemoteApplication>();
-      _apps.put(accountId, map);
+      _apps.putIfAbsent(accountId, map);
     }
-    return map.get(applicationId);
+    RemoteApplication app =  map.get(applicationId);
+    return app;
   }
 
-  void putApplication(RemoteApplication app) {
-    Map<String, RemoteApplication> map = _apps.get(app.getAccountID());
+  protected void putApplication(RemoteApplication app) {
+    ConcurrentMap<String, RemoteApplication> map = _apps.get(app.getAccountID());
     if (map == null) {
       map = new ConcurrentHashMap<String, RemoteApplication>();
-      _apps.put(app.getAccountID(), map);
+      _apps.putIfAbsent(app.getAccountID(), map);
     }
     map.put(app.getApplicationID(), app);
     _index.put(app.getApplicationKey(), app);
+    clearCached(app);
   }
   
-  void removeApplication(RemoteApplication app) {
-    Map<String, RemoteApplication> map = _apps.get(app.getAccountID());
-    if (map != null) {
-      map.remove(app.getApplicationID());
+  protected void removeApplication(RemoteApplication app) {
+    ConcurrentMap<String, RemoteApplication> map = _apps.get(app.getAccountID());
+    if (map != null) {      
+      map.remove(app.getApplicationID(), app);
     }
     _index.remove(app.getApplicationKey());
-    for(Iterator<Map.Entry<Object, Application>> i = _cache.entrySet().iterator(); i.hasNext();) {
-      Map.Entry<Object, Application> entry = i.next();
-      if (app.equals(entry.getValue())) {
-        i.remove();
-      }
-    }
+    clearCached(app);
   }
   
-  public Map<String, String> prompt(String key, String id, PromptStruct prompt) throws NetworkException, AuthenticationException, UserException, SystemException, TException {
+  public Map<String, String> prompt(String key, String id, PromptStruct prompt) throws AuthenticationException, TropoException, SystemException, TException {
     RemoteApplication app = _index.get(key);
     if (app != null && app instanceof ThriftApplication) {
       return ((ThriftApplication)app).prompt(id, prompt);
@@ -211,12 +234,17 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
   }
 
-  public void redirect(String key, String id, String number) throws NetworkException, AuthenticationException, UserException, SystemException, TException {
-    // TODO Auto-generated method stub
-    
+  public void redirect(String key, String id, String number) throws TropoException, AuthenticationException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      ((ThriftApplication)app).redirect(id, number);
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
   }
 
-  public void reject(String key, String id) throws NetworkException, AuthenticationException, UserException, SystemException, TException {
+  public void reject(String key, String id) throws AuthenticationException, TropoException, SystemException, TException {
     RemoteApplication app = _index.get(key);
     if (app != null && app instanceof ThriftApplication) {
       ((ThriftApplication)app).reject(id);
@@ -226,11 +254,150 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
   }
 
-  public void unbind(String token) throws NetworkException, AuthenticationException, UserException, SystemException, TException {
+  public void unbind(String token) throws AuthenticationException, SystemException, TException {
     RemoteApplication app = _index.get(token);
     if (app != null) {
       removeApplication(app);
     }
     app.dispose();
+  }
+
+  public void heartbeat(String token) throws AuthenticationException, SystemException, TException {
+    RemoteApplication app = _index.get(token);
+    if (app == null) {
+      throw new AuthenticationException();
+    }
+  }
+
+  public void execute(SipServletRequest req, RemoteApplication app) throws IOException, ScriptException {
+    if (app instanceof ThriftApplication) {
+      try {
+        ((ThriftApplication)app)._execute(req);
+      }
+      catch(TException e) {
+        removeApplication(app);
+        throw new IOException(e);
+      }
+      catch(AuthenticationException e) {
+        throw new ScriptException(e);
+      }
+      catch(SystemException e) {
+        throw new ScriptException(e);
+      }
+      catch(TropoException e) {
+        throw new ScriptException(e);        
+      }
+    }
+  }
+
+  public void execute(HttpServletRequest req, RemoteApplication app) throws IOException, ScriptException {
+    if (app instanceof ThriftApplication) {
+      try {
+        ((ThriftApplication)app)._execute(req);
+      }
+      catch(TException e) {
+        removeApplication(app);
+        throw new IOException(e);
+      }
+      catch(AuthenticationException e) {
+        throw new ScriptException(e);
+      }
+      catch(SystemException e) {
+        throw new ScriptException(e);
+      }
+      catch(TropoException e) {
+        throw new ScriptException(e);        
+      }
+    }
+  }
+  
+  class ApplicationCollector implements Runnable {
+    boolean _stop = false;
+    Thread _current;
+
+    public void run() {
+      _current = Thread.currentThread();
+      while(!_stop) {
+        Collection<RemoteApplication> dead = new LinkedList<RemoteApplication>();
+        for (RemoteApplication app : _index.values()) {
+          if (!app.isActive()) {
+            dead.add(app);
+          }
+        }
+        if (dead.size() > 0) {
+          for (RemoteApplication app : dead) {
+            LOG.info("Removing dead " + app);
+            app.dispose();
+            removeApplication(app);
+          }
+        }
+        try {
+          synchronized(this) {
+            this.wait(5000);
+          }
+        }
+        catch(InterruptedException e) {
+          //ignore
+        }
+      }
+    }
+    
+    void stop() {
+      _stop = true;
+      _current.interrupt();
+    }
+    
+  }
+
+  public void block(String key, String id, int timeout) throws AuthenticationException, TropoException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      ((ThriftApplication)app).block(id, timeout);
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
+  }
+
+  public AlertStruct call(String key, String from, String to, boolean answerOnMedia, int timeout) throws AuthenticationException, TropoException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      CallImpl call = ((ThriftApplication)app).call(from, to, answerOnMedia, timeout);
+      return new AlertStruct(call.getId(), app.getApplicationID(), call.getCallerId(), call.getCallerName(), call.getCalledId(), call.getCalledName());
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
+  }
+
+  public void hangup(String key, String id) throws AuthenticationException, TropoException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      ((ThriftApplication)app).hangup(id);
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
+  }
+
+  public void log(String key, String id, String msg) throws AuthenticationException, TropoException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      ((ThriftApplication)app).log(id, msg);
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
+  }
+
+  public AlertStruct transfer(String key, String id, TransferStruct t) throws AuthenticationException, TropoException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      CallImpl call = ((ThriftApplication)app).transfer(id, t);
+      return new AlertStruct(call.getId(), app.getApplicationID(), call.getCallerId(), call.getCallerName(), call.getCalledId(), call.getCalledName());
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
   }
 }

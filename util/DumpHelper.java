@@ -13,6 +13,7 @@ import javax.servlet.sip.SipSession;
 import com.micromethod.common.util.jmx.JmxHelper;
 import com.micromethod.common.util.jmx.ObjectNameFactory;
 import com.voxeo.tropo.core.Call;
+import com.voxeo.tropo.core.CallImpl;
 
 public class DumpHelper {
 
@@ -33,10 +34,10 @@ public class DumpHelper {
     int index = 0;
     for (final SipSession session : sessions) {
       index = index + 1;
-      Call call = null;
+      CallImpl call = null;
       if (session.isValid()) {
         try {
-          call = (Call) session.getAttribute(Call.INST);
+          call = (CallImpl) session.getAttribute(CallImpl.INST);
         }
         catch (final Throwable t) {
           ;

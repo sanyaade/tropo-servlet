@@ -177,12 +177,11 @@ public abstract class AbstractLocalApplicationManager extends AbstractApplicatio
   }
 
   public static synchronized void initialization(final ServletContext ctx) throws InstantiationException, IllegalAccessException {
-    if (SECURITY_MGR == null && Configuration.get().isEnableSecurityManager()) {
-      SECURITY_MGR = new ScriptSecurityManager(ctx);
-      System.setSecurityManager(SECURITY_MGR);
-    }
-
     if (SCRIPT_MGR == null) {
+      Utils.pythonHome();
+      Utils.rubyHome();
+      Utils.getAppDir();
+      
       // initialize script engine manager
       SCRIPT_MGR = new ScriptEngineManager();
       ctx.setAttribute(ServletContextConstants.ENGINE_MANAGER, SCRIPT_MGR);
@@ -197,8 +196,13 @@ public abstract class AbstractLocalApplicationManager extends AbstractApplicatio
         log.append(e instanceof Serializable ? ", serializable=true" : ", serializable=false.");
         LOG.info(log.toString());
       }
-
     }
+    
+    if (SECURITY_MGR == null && Configuration.get().isEnableSecurityManager()) {
+      SECURITY_MGR = new ScriptSecurityManager(ctx);
+      System.setSecurityManager(SECURITY_MGR);
+    }
+    
     AbstractApplicationManager.initialization(ctx);
   }
 

@@ -39,7 +39,7 @@ public class SimpleCallFactory implements CallFactory {
     _app = app;
   }
 
-  public SimpleOutgoingCall call(final String from, final String to, final boolean answerOnMedia, final long timeout) {
+  public SimpleOutgoingCall call(final String from, final String to, final boolean answerOnMedia, final int timeout) {
     return call(null, from, to, answerOnMedia, timeout, null);
   }
 
@@ -78,7 +78,7 @@ public class SimpleCallFactory implements CallFactory {
             + ",answerOnMedia:" + answerOnMedia + "]:\r\n" + req);
       }
       final long start = System.currentTimeMillis();
-      long time = timeout;
+      long time = timeout*1000L;
       call.lock();
       try {
         while ((call.getState() == Call.State.RINGING || call.getState() == Call.State.ANSWERING) && time > 0) {

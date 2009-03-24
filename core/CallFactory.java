@@ -4,5 +4,5 @@ import java.io.IOException;
 
 public interface CallFactory {
 
-  OutgoingCall call(final String from, final String to, final boolean answerOnMedia, final long timeout) throws IOException;
+  OutgoingCall call(final String from, final String to, final boolean answerOnMedia, final int timeout) throws IOException;
 }

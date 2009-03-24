@@ -26,14 +26,14 @@ import com.voxeo.tropo.core.CallImpl;
 import com.voxeo.tropo.core.IncomingCall;
 import com.voxeo.tropo.core.SimpleCallFactory;
 import com.voxeo.tropo.core.SimpleIncomingCall;
+import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
-import com.voxeo.tropo.thrift.NetworkException;
+import com.voxeo.tropo.thrift.Notifier;
 import com.voxeo.tropo.thrift.PromptStruct;
-import com.voxeo.tropo.thrift.ShimCall;
-import com.voxeo.tropo.thrift.ShimService;
 import com.voxeo.tropo.thrift.SystemException;
-import com.voxeo.tropo.thrift.UserException;
+import com.voxeo.tropo.thrift.TransferStruct;
+import com.voxeo.tropo.thrift.TropoException;
 import com.voxeo.tropo.util.Utils;
 
 @SipListener
@@ -50,7 +50,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   
   protected String _key;
   
-  protected transient ShimService.Client _shim;
+  protected transient Notifier.Client _notifier;
   
   protected transient TTransport _transport;
     
@@ -58,75 +58,75 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   
   protected transient String _token;
   
-  protected transient Map<String, SipApplicationSession> _sessions;
-  
+  protected transient int _beats;
+    
 
   public ThriftApplication(final RemoteApplicationManager mgr, final ThriftURL url, final int aid, final String appId, final List<SipURI> contacts) {
     super(mgr, url, "Thrift", aid, appId, null);
     _contacts = contacts;
+    _url = url;
     _calls = new ConcurrentHashMap<String, Call>();
     _key = Utils.getGUID(); 
   }
   
-  public void dispose() {
-    for(Call call : _calls.values()) {
-      call.hangup();
+  public synchronized void dispose() {
+    if (_notifier  != null) {
+      try {
+        _notifier.unbind(_token);
+      }
+      catch(Throwable t) {
+        //ignore
+      }
+      _notifier = null;
     }
-    _calls = null;
+    if (_calls != null) {
+      for(Call call : _calls.values()) {
+        call.hangup();
+      }
+      _calls = null;
+    }
     _transport.close();
-    _shim = null;
   }
   
-  public synchronized ShimService.Client getShimService() throws NetworkException, AuthenticationException, UserException, SystemException, TException {
-    if (_shim == null) {
+  protected synchronized Notifier.Client getNotifier() throws AuthenticationException, TropoException, SystemException, TException {
+    if (_notifier == null) {
       _transport = new TSocket(_url.getHost(), _url.getPort());
       TBinaryProtocol binaryProtocol = new TBinaryProtocol(_transport);
-      ShimService.Client shim = new ShimService.Client(binaryProtocol);
+      Notifier.Client notifier = new Notifier.Client(binaryProtocol);
+      _transport.open();
       try {
-        _token = shim.bind(_url.getAuthority());
-        _shim = shim;
-        LOG.info(shim + " is connectioned.");
+        _token = notifier.bind(_url.getAuthority());
+        _notifier = notifier;
+        LOG.info(notifier + " is connectioned.");
       }
       catch(BindException e) {
         //TODO: rebind
       }
     }
-    return _shim;
+    return _notifier;
   }
 
   public void execute(SipServletRequest invite) throws ScriptException, IOException {
+    ((RemoteApplicationManager)getManager()).execute(invite, this);
+  }
+  
+  protected void _execute(SipServletRequest invite) throws TException, TropoException, SystemException, AuthenticationException {
     SipApplicationSession appSession = invite.getApplicationSession();
     SimpleCallFactory factory = new SimpleCallFactory(this, appSession);
     appSession.setAttribute(CALL_FACTORY, factory);
     CallImpl call = new SimpleIncomingCall(factory, invite, this);
-    try {
-      ShimService.Client shim = getShimService();
-      ShimCall shimCall = new ShimCall(call.getId(), call.getCallerId(), call.getCallerName(), call.getCalledId(), call.getCalledName());
-      shim.alert(_token, shimCall);
-      _calls.put(call.getId(), call);
-      _sessions.put(appSession.getId(), appSession);
-      LOG.info(shim + " is alerted.");
-    }
-    catch(NetworkException e) {
-      throw new IOException(e);
-    }
-    catch(TException e) {
-      throw new IOException(e);
-    }
-    catch(SystemException e) {
-      throw new ScriptException(e);
-    }
-    catch(UserException e) {
-      throw new ScriptException(e);
-    }
-    catch(AuthenticationException e) {
-      throw new IOException(e);
-    }
+    AlertStruct alert = new AlertStruct(call.getId(), getApplicationID(), call.getCallerId(), call.getCallerName(), call.getCalledId(), call.getCalledName());
+    _calls.put(call.getId(), call);
+    getNotifier().alert(_token, alert);
   }
 
   public void execute(HttpServletRequest invite) throws ScriptException, IOException {
+    ((RemoteApplicationManager)getManager()).execute(invite, this);
   }
-
+  
+  protected void _execute(HttpServletRequest invite) throws TException, TropoException, SystemException, AuthenticationException {
+  }
+  
   public boolean isProxy() {
     return _mgr == null;
   }
@@ -139,62 +139,146 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     return _key;
   }
   
-  void answer(String id, int timeout) throws UserException, SystemException {
+  Call getCall(String id) throws TropoException {
     Call call = _calls.get(id);
     if (call == null) {
-      throw new UserException("Invalid call id: " + id);
+      throw new TropoException("Invalid call id: " + id);
     }
-    if (!(call instanceof IncomingCall)) {
-      throw new UserException(call + " can not be answered.");
-    }
+    return call;
+  }
+  
+  void answer(String id, int timeout) throws TropoException, SystemException {
+    Call call = getCall(id);
     try {
       ((IncomingCall)call).answer(timeout);
     }
+    catch(ClassCastException e) {
+      throw new TropoException(call + " can not be answered.");     
+    }
     catch(ErrorException e) {
-      throw new UserException(e.toString());
+      throw new TropoException(e.toString());
     }
     catch(FatalException e) {
       throw new SystemException(e.toString());
     }
   }
   
-  void reject(String id) throws UserException, SystemException {
-    Call call = _calls.get(id);
-    if (call == null) {
-      throw new UserException("Invalid call id: " + id);
-    }
-    if (!(call instanceof IncomingCall)) {
-      throw new UserException(call + " can not be answered.");
-    }
+  void reject(String id) throws TropoException, SystemException {
+    Call call = getCall(id);
     try {
       ((IncomingCall)call).reject();
     }
+    catch(ClassCastException e) {
+      throw new TropoException(call + " can not be rejected.");     
+    }
     catch(ErrorException e) {
-      throw new UserException(e.toString());
+      throw new TropoException(e.toString());
     }
     catch(FatalException e) {
       throw new SystemException(e.toString());
     }    
   }
   
-  Map<String, String> prompt(String id, PromptStruct prompt) throws UserException, SystemException {
-    Call call = _calls.get(id);
-    if (call == null) {
-      throw new UserException("Invalid call id: " + id);
-    }
+  void hangup(String id) throws TropoException, SystemException {
+    Call call = getCall(id);
     try {
-      return ((IncomingCall)call).prompt(prompt.getTtsOrUrl(), prompt.isBargein(), prompt.getGrammar(), prompt.getConfidence(), prompt.getMode(), prompt.getWait());
+      call.hangup();
     }
     catch(ErrorException e) {
-      throw new UserException(e.toString());
+      throw new TropoException(e.toString());
     }
     catch(FatalException e) {
       throw new SystemException(e.toString());
     }    
   }
 
+  void log(String id, String msg) throws TropoException, SystemException {
+    Call call = getCall(id);
+    try {
+      call.log(msg);
+    }
+    catch(ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch(FatalException e) {
+      throw new SystemException(e.toString());
+    }    
+  }
+  
+  CallImpl transfer(String id, TransferStruct t) throws TropoException, SystemException {
+    Call call = getCall(id);
+    try {
+      return (CallImpl)call.transfer(t.getTo(), t.getFrom(), t.isAnswerOnMedia(), t.getTimeout(), t.getTtsOrUrl(), t.getRepeat(), t.getGrammar());
+    }
+    catch(ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch(FatalException e) {
+      throw new SystemException(e.toString());
+    }    
+  }
+  
+  Map<String, String> prompt(String id, PromptStruct prompt) throws TropoException, SystemException {
+    Call call = getCall(id);
+    try {
+      return call.prompt(prompt.getTtsOrUrl(), prompt.isBargein(), prompt.getGrammar(), prompt.getConfidence(), prompt.getMode(), prompt.getWait());
+    }
+    catch(ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch(FatalException e) {
+      throw new SystemException(e.toString());
+    }    
+  }
+  
+  void redirect(String id, String number) throws TropoException, SystemException {
+    Call call = getCall(id);
+    try {
+      ((IncomingCall)call).redirect(number);
+    }
+    catch(ClassCastException e) {
+      throw new TropoException(call + " can not be answered.");     
+    }
+    catch(ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch(FatalException e) {
+      throw new SystemException(e.toString());
+    }        
+  }
+
+  void block(String id, int timeout) throws TropoException, SystemException {
+    Call call = getCall(id);
+    try {
+      call.block(timeout);
+    }
+    catch(ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch(FatalException e) {
+      throw new SystemException(e.toString());
+    }            
+  }
+  
+  CallImpl call(String from, String to, boolean answerOnMedia, int timeout) throws TropoException, SystemException {
+    SipApplicationSession appSession = getSipFactory().createApplicationSession();
+    SimpleCallFactory factory = new SimpleCallFactory(this, appSession);
+    appSession.setAttribute(CALL_FACTORY, factory);
+    CallImpl call = factory.call(from, to, answerOnMedia, timeout);
+    _calls.put(call.getId(), call);
+    return call;
+  }
+  
   public boolean isActive() {
-    // TODO Auto-generated method stub
-    return false;
+    try {
+      getNotifier().heartbeat(_token);
+      _beats = 0;
+      return true;
+    }
+    catch(Throwable e) {
+      _beats++;
+      LOG.error(e);
+      return _beats > 2? false : true;
+    }
   }
 }

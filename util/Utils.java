@@ -212,8 +212,10 @@ public class Utils {
     }
     if (python != null && new File(python).isDirectory()) {
       System.setProperty("python.home", python);
+      LOG.info("python.home is " + python);
       return python;
     }
+    LOG.error("JYTHON_HOME is NOT defined or the referred directory does not exist!");
     return null;
   }
 
@@ -229,8 +231,10 @@ public class Utils {
       System.setProperty("jruby.home", jruby);
       System.setProperty("com.sun.script.jruby.loadpath", jruby);
       System.setProperty("com.sun.script.jruby.terminator", "on");
+      LOG.info("jruby.home is " + jruby);
       return jruby;
     }
+    LOG.error("JRUBY_HOME is NOT defined or the referred directory does not exist!");
     return null;
   }
 
@@ -243,8 +247,10 @@ public class Utils {
       appDir = System.getenv("TROPO_APP_HOME");
     }
     if (appDir != null && new File(appDir).isDirectory()) {
+      LOG.info("Tropo app dir is " + appDir);
       return appDir;
     }
+    LOG.error("TROPO_APP_HOME is NOT defined or the referred directory does not exist!");
     return null;
   }
 

@@ -3,18 +3,9 @@ package com.voxeo.tropo.core;
 import java.util.Map;
 
 public interface Call {
-
-  String INST = "com.voxeo.tropo.core.call.inst";
-
   enum State {
     RINGING, ANSWERING, ANSWERED, REJECTING, REJECTED, DISCONNECTED, FAILED, REDIRECTING, REDIRECTED
   }
-
-  long getCreatedTime();
-
-  State getState();
-
-  boolean isActive();
 
   Map<String, String> prompt(String ttsOrUrl, boolean bargein, String grammar, String confidence, String mode, int wait);
 
@@ -32,7 +23,7 @@ public interface Call {
 
   void log(Object msg);
 
-  void block(int milliSeconds);
+  void block(int seconds);
   
   String getHeader(String name);
 }

@@ -5,6 +5,14 @@ import com.voxeo.sipmethod.mrcp.client.MrcpAsrSession;
 import com.voxeo.sipmethod.mrcp.client.MrcpTtsSession;
 
 public interface CallImpl extends Call {
+  String INST = "com.voxeo.tropo.core.call.inst";
+
+  long getCreatedTime();
+
+  State getState();
+
+  boolean isActive();
+
   void setState(final State state);
 
   void lock();
