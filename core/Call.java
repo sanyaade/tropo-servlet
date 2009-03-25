@@ -23,7 +23,7 @@ public interface Call {
 
   void log(Object msg);
 
-  void block(int seconds);
+  void block(int milliseconds);
   
   String getHeader(String name);
 }

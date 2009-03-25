@@ -44,13 +44,14 @@ public class SimpleCallFactory implements CallFactory {
   }
 
   public SimpleOutgoingCall call(final SipServletRequest origReq, final String from, final String to,
-      final boolean answerOnMedia, final long timeout, final MrcpRTCListener listener) {
+      final boolean answerOnMedia, final int timeout, final MrcpRTCListener listener) {
     final SimpleOutgoingCall call;
     String caller = Utils.processFrom(from, origReq == null ? null : origReq.getLocalAddr());
     if ((caller == null || caller.length() == 0) && origReq != null) {
       caller = origReq.getFrom().toString();
     }
     final String callee = Utils.processTo(to);
+    LOG.info("Creating outgoing call : " + caller + "-->" + callee + "," + answerOnMedia + "," + timeout);
     try {
       final SipServletRequest req = _sipFactory.createRequest(_session, "INVITE", caller, callee);
       if (_inst != null) {
@@ -78,7 +79,7 @@ public class SimpleCallFactory implements CallFactory {
             + ",answerOnMedia:" + answerOnMedia + "]:\r\n" + req);
       }
       final long start = System.currentTimeMillis();
-      long time = timeout*1000L;
+      long time = timeout;
       call.lock();
       try {
         while ((call.getState() == Call.State.RINGING || call.getState() == Call.State.ANSWERING) && time > 0) {
