@@ -122,6 +122,12 @@ public class Configuration {
   @ConfigurationItem
   private int threadSize = 400;
 
+  @StringPart
+  private Map<String, String> sandboxAllow = new HashMap<String, String>();
+
+  @StringPart
+  private Map<String, String> sandboxForbid = new HashMap<String, String>();
+
   public static Configuration get() {
     if (INSTANCE == null) {
       throw new IllegalArgumentException("Tropo configuratrion has not been initialized.");
@@ -167,6 +173,11 @@ public class Configuration {
     final String threads = f.getAttributeValue("threadSize");
     if (threads != null && threads.length() > 0) {
       threadSize = Integer.parseInt(threads);
+    }
+
+    // security manager
+    if (enableSecurityManager) {
+      parseSandbox(f.getChild("sandbox"));
     }
 
     // media server configurations
@@ -410,5 +421,38 @@ public class Configuration {
   public boolean isEnableSecurityManager() {
     return enableSecurityManager;
   }
+  public void parseSandbox(Element s){
+    List<Element> as = s.getChildren("allow");
+    for(Element a:as){
+      List<Element> is = a.getChildren("item");
+      for(Element i:is){
+        String action = i.getAttributeValue("action");
+        String target = i.getTextNormalize().toLowerCase();
+        sandboxAllow.put(target, action);
+      }
+    }
+    as = s.getChildren("forbid");
+    for(Element a:as){
+      List<Element> is = a.getChildren("item");
+      for(Element i:is){
+        String action = i.getAttributeValue("action");
+        String target = i.getTextNormalize().toLowerCase();
+        sandboxForbid.put(target, action);
+      }
+    }
+  }
 
+  /**
+   * @return the sandboxForbid
+   */
+  Map<String, String> getSandboxForbid() {
+    return sandboxForbid;
+  }
+
+  /**
+   * @return the sandboxAllow
+   */
+  Map<String, String> getSandboxAllow() {
+    return sandboxAllow;
+  }
 }

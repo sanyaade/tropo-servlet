@@ -11,4 +11,5 @@ public interface ServletContextConstants {
   
   String GUID_SESSION_ID = "com.voxeo.tropo.session.id";
   String GUID_PARENT_SESSION_ID = "com.voxeo.tropo.session.parent.id";
+  String ROOT_PATH = "com.voxeo.tropo.root.path";
 }

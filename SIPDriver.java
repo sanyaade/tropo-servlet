@@ -53,6 +53,7 @@ public class SIPDriver extends SipServlet {
   public void init() {
     final ServletContext ctx = getServletContext();
     try {
+      System.setProperty(ServletContextConstants.ROOT_PATH, ctx.getRealPath("/"));
       Configuration.init(this.getServletConfig());
       AbstractApplicationManager.load(Configuration.get(), ctx);
       DumpHelper.initialization(_server);

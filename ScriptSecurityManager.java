@@ -11,6 +11,7 @@ import java.security.Permission;
 import java.security.Security;
 import java.security.SecurityPermission;
 import java.security.Signature;
+import java.util.Map;
 import java.util.PropertyPermission;
 import java.util.Set;
 
@@ -49,6 +50,10 @@ public class ScriptSecurityManager extends SecurityManager {
       "org.jruby", "org.python", "com.ziclix.python", "org.mozilla.javascript",
       "org.codehaus.groovy", "groovy", "com.caucho",
   };
+  private Map<String, String> _allow = null;
+
+  private Map<String, String> _forbid = null;
+
   
   public ScriptSecurityManager(ServletContext ctx) {
     _windows = System.getProperty("os.name").startsWith("Windows") ? true : false;
@@ -65,6 +70,8 @@ public class ScriptSecurityManager extends SecurityManager {
     LOG.info("Tropo JDK directory is " + _jdk);
     LOG.info("Tropo JRuby directory is " + _jruby);
     LOG.info("Tropo Jython directory is " + _jython);
+    _allow = Configuration.get().getSandboxAllow();
+    _forbid = Configuration.get().getSandboxForbid();
     securityInitialization();
   }
   
@@ -155,6 +162,18 @@ public class ScriptSecurityManager extends SecurityManager {
         String target = normalize(p.getName());
         String action = p.getActions().toLowerCase();
         String abase = normalize(((LocalApplication)(ai.getApp())).getBaseDir());
+        // check the forbid configuration in tropo.xml first
+        if (_forbid.containsKey(target) && _forbid.get(target).equals(action)) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("No " + action + " FilePermission to " + target);
+          }
+          throw new SecurityException("No " + action + " FilePermission to " + target);
+        }
+        // check the allow configuration in tropo.xml
+        if (_allow.containsKey(target) && _allow.get(target).equals(action)) {
+          return;
+        }
+        
         if (target.startsWith(abase)) {
           if ("execute".equals(action)) {
             if (LOG.isDebugEnabled()) {
