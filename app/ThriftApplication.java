@@ -226,7 +226,10 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     Call call = getCall(id);
     try {
       Map<String, String> result = call.prompt(prompt.getTtsOrUrl(), prompt.isBargein(), prompt.getGrammar(), prompt.getConfidence(), prompt.getMode(), prompt.getWait());
-      System.out.println(result);
+      // System.out.println(result);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(result.toString());
+      }
       return result;
     }
     catch(ErrorException e) {
