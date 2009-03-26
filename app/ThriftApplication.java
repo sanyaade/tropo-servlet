@@ -45,9 +45,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   public static final String CALL_FACTORY = "com.voxeo.tropo.thrift.callFactory";
   
   protected List<SipURI> _contacts;
-  
-  protected transient ThriftURL _url;
-  
+    
   protected String _key;
   
   protected transient Notifier.Client _notifier;
@@ -58,19 +56,25 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   
   protected transient String _token;
   
-  protected transient int _beats;
-    
+  protected transient int _beats;    
 
   public ThriftApplication(final RemoteApplicationManager mgr, final ThriftURL url, final int aid, final String appId, final List<SipURI> contacts) {
     super(mgr, url, "Thrift", aid, appId, null);
     _contacts = contacts;
-    _url = url;
     _calls = new ConcurrentHashMap<String, Call>();
     _key = Utils.getGUID(); 
   }
   
+  public ThriftApplication(final ThriftApplication shared, final String appId) throws AuthenticationException, SystemException, TException {
+    super(shared.getManager(), shared.getURL(), "Thrift", shared.getAccountID(), appId, null);
+    _contacts = shared.getContacts();
+    _calls = new ConcurrentHashMap<String, Call>();
+    _key = Utils.getGUID();
+    _notifier = shared.getNotifier();
+  }
+
   public synchronized void dispose() {
-    if (_notifier  != null) {
+    if (_transport != null && _notifier  != null) {
       try {
         _notifier.unbind(_token);
       }
@@ -78,6 +82,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
         //ignore
       }
       _notifier = null;
+      _transport.close();
     }
     if (_calls != null) {
       for(Call call : _calls.values()) {
@@ -85,10 +90,9 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
       }
       _calls = null;
     }
-    _transport.close();
   }
   
-  protected synchronized Notifier.Client getNotifier() throws AuthenticationException, TropoException, SystemException, TException {
+  protected synchronized Notifier.Client getNotifier() throws AuthenticationException, SystemException, TException {
     if (_notifier == null) {
       _transport = new TSocket(_url.getHost(), _url.getPort());
       TBinaryProtocol binaryProtocol = new TBinaryProtocol(_transport);
@@ -221,9 +225,12 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   Map<String, String> prompt(String id, PromptStruct prompt) throws TropoException, SystemException {
     Call call = getCall(id);
     try {
-      return call.prompt(prompt.getTtsOrUrl(), prompt.isBargein(), prompt.getGrammar(), prompt.getConfidence(), prompt.getMode(), prompt.getWait());
+      Map<String, String> result = call.prompt(prompt.getTtsOrUrl(), prompt.isBargein(), prompt.getGrammar(), prompt.getConfidence(), prompt.getMode(), prompt.getWait());
+      System.out.println(result);
+      return result;
     }
     catch(ErrorException e) {
+      System.out.println(e.toString());
       throw new TropoException(e.toString());
     }
     catch(FatalException e) {

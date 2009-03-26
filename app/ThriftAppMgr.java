@@ -76,7 +76,14 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     try {
       URLByNumberGet info = new URLByNumberGet();
       info.execute(name);
-      RemoteApplication app = getApplication(info.getAccountID(), info.getApplicationID());
+      RemoteApplication app = null;
+      try {
+        app = getApplication(info.getAccountID(), info.getApplicationID());
+      }
+      catch(Exception e) {
+        throw new InvalidApplicationException(e);
+      }
+      
       if (app != null) {
         if (!app.isProxy()) {
           LOG.info(this + " found remote " + app + " for " + uri);
@@ -103,7 +110,13 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   protected Application findApplication(String token, Properties params) throws InvalidApplicationException, RedirectException {
     URLByTokenGet info = new URLByTokenGet();
     info.execute(token);
-    RemoteApplication app = getApplication(info.getAccountID(), info.getApplicationID());
+    RemoteApplication app = null;
+    try {
+      app = getApplication(info.getAccountID(), info.getApplicationID());
+    }
+    catch(Exception e) {
+      throw new InvalidApplicationException(e);
+    }
     if (app != null) {
       if (!app.isProxy()) {
         LOG.info(this + " found remote " + app + " for " + token);
@@ -160,7 +173,6 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   }
 
   public void answer(String key, String id, int timeout) throws AuthenticationException, TropoException, SystemException, TException {
-    LOG.info("answer("+key+", "+id+", "+timeout+")");
     RemoteApplication app = _index.get(key);
     if (app != null && app instanceof ThriftApplication) {
       ((ThriftApplication)app).answer(id, timeout);
@@ -194,13 +206,19 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     return newapp.getApplicationKey();
   }
   
-  protected RemoteApplication getApplication(int accountId, String applicationId) {
+  protected RemoteApplication getApplication(int accountId, String applicationId) throws AuthenticationException, SystemException, TException {
     ConcurrentMap<String, RemoteApplication> map = _apps.get(accountId);
     if (map == null) {
       map = new ConcurrentHashMap<String, RemoteApplication>();
       _apps.putIfAbsent(accountId, map);
     }
     RemoteApplication app =  map.get(applicationId);
+    if (app == null) {
+      app = map.get(DEAULT_APPLICATION_ID);
+      if (app != null && app instanceof ThriftApplication) {
+        app = new ThriftApplication((ThriftApplication)app, applicationId);
+      }
+    }
     return app;
   }
 

@@ -177,7 +177,10 @@ public class Configuration {
 
     // security manager
     if (enableSecurityManager) {
-      parseSandbox(f.getChild("sandbox"));
+      Element e = f.getChild("sandbox");
+      if (e != null) {
+        parseSandbox(e);
+      }
     }
 
     // media server configurations
@@ -421,6 +424,8 @@ public class Configuration {
   public boolean isEnableSecurityManager() {
     return enableSecurityManager;
   }
+  
+  @SuppressWarnings("unchecked")
   public void parseSandbox(Element s){
     List<Element> as = s.getChildren("allow");
     for(Element a:as){

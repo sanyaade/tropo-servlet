@@ -22,7 +22,14 @@ public class MockThriftAppMgr extends ThriftAppMgr {
         throw new InvalidApplicationException("Only SIP URI or Tel URL is supported: " + uri);
     }
     
-    RemoteApplication app = getApplication(1, name);
+    RemoteApplication app = null;
+    try {
+      app = getApplication(1, name);
+    }
+    catch(Exception e) {
+      throw new InvalidApplicationException(e);
+    }
+    
     if (app != null) {
       if (!app.isProxy()) {
         LOG.info(this + " found remote " + app + " for " + uri);
