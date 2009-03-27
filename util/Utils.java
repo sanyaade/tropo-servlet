@@ -2,8 +2,11 @@ package com.voxeo.tropo.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -15,6 +18,18 @@ import javax.servlet.sip.ConvergedHttpSession;
 import javax.servlet.sip.SipApplicationSession;
 import javax.servlet.sip.SipServletMessage;
 import javax.servlet.sip.SipServletRequest;
+import javax.xml.namespace.QName;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPBodyElement;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.ws.BindingProvider;
+import javax.xml.ws.Dispatch;
+import javax.xml.ws.Service;
+import javax.xml.ws.soap.SOAPBinding;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -22,11 +37,11 @@ import org.apache.log4j.MDC;
 import com.micromethod.common.util.StringUtils;
 import com.voxeo.Guido.Guido;
 import com.voxeo.Guido.GuidoException;
+import com.voxeo.logging.LoggingContext;
 import com.voxeo.tropo.Configuration;
 import com.voxeo.tropo.ServletContextConstants;
 import com.voxeo.tropo.app.Application;
 import com.voxeo.tropo.app.ApplicationInstance;
-import com.voxeo.logging.LoggingContext;
 
 public class Utils {
   
@@ -42,6 +57,8 @@ public class Utils {
 
   public static final String HOSTNAME;
 
+  private static final String _wsdlDocumentLocation = "http://evolution.voxeo.com/services/AccountManagement?wsdl";
+  
   static {
     String hostname;
     try {
@@ -262,5 +279,63 @@ public class Utils {
       LOG.error("Error generating GUID,", e);
       return "ERROR";
     }
+  }
+  
+
+  public static String authenticate(String username, String password) throws SOAPException, MalformedURLException {
+    // Qnames for service as defined in wsdl.
+    QName serviceName = new QName("http://localhost/services", "AccountManagementService");
+
+    // QName for Port As defined in wsdl.
+    QName portName = new QName("http://localhost/services", "AccountManagement");
+
+    // Create a dynamic Service instance
+    Service service = Service.create(new URL(_wsdlDocumentLocation), serviceName);
+
+    // Create a dispatch instance
+    Dispatch<SOAPMessage> dispatch = service.createDispatch(portName, SOAPMessage.class, Service.Mode.MESSAGE);
+
+    // Use Dispatch as BindingProvider
+    BindingProvider bp = (BindingProvider) dispatch;
+
+    // Optionally Configure RequestContext to send SOAPAction HTTP Header
+    Map<String, Object> rc = bp.getRequestContext();
+    rc.put(BindingProvider.SOAPACTION_USE_PROPERTY, Boolean.TRUE);
+    rc.put(BindingProvider.SOAPACTION_URI_PROPERTY, "getAccessToken");
+
+    // Obtain a preconfigured SAAJ MessageFactory
+    MessageFactory factory = ((SOAPBinding) bp.getBinding()).getMessageFactory();
+
+    // Create SOAPMessage Request
+    SOAPMessage request = factory.createMessage();
+
+    // Request Header
+    SOAPHeader header = request.getSOAPHeader();
+
+    // Request Body
+    SOAPBody body = request.getSOAPBody();
+
+    // Compose the soap:Body payload
+    QName payloadName = new QName("http://localhost/services", "getAccessToken", "ns1");
+    SOAPBodyElement payload = body.addBodyElement(payloadName);
+    SOAPElement message = payload.addChildElement("arg0");
+    message.addTextNode(username);
+
+    message = payload.addChildElement("arg1");
+    message.addTextNode(password);
+
+    // Invoke the endpoint synchronously
+    SOAPMessage reply = null;
+
+    reply = dispatch.invoke(request);
+
+    // process the reply
+    body = reply.getSOAPBody();
+
+    QName responseName = new QName("http://localhost/services", "getAccessTokenResponse");
+
+    SOAPBodyElement bodyElement = (SOAPBodyElement) body.getChildElements(responseName).next();
+    String message1 = ((SOAPBodyElement) body.getChildElements(responseName).next()).getTextContent();
+    return message1;
   }
 }

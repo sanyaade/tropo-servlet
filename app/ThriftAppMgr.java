@@ -1,6 +1,7 @@
 package com.voxeo.tropo.app;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,6 +17,7 @@ import javax.servlet.sip.SipServletRequest;
 import javax.servlet.sip.SipURI;
 import javax.servlet.sip.TelURL;
 import javax.servlet.sip.URI;
+import javax.xml.soap.SOAPException;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -187,7 +189,25 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     if (bind.getAccountId() <= 0 || StringUtils.isEmpty(bind.getApplicationId())) {
       throw new SystemException("Invalid account or application.");
     }
-    //TODO authentication    
+    try {
+      String token = Utils.authenticate(bind.getUser(), bind.getPassword());
+    }
+    catch (MalformedURLException e) {
+      LOG.error(e);
+      throw new SystemException(e.getMessage());
+    }
+    catch (SOAPException e) {
+      if (e.getMessage().contains("Invalid login")) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Invalid username[" + bind.getUser() + "] or password[" + bind.getPassword() + "]");
+        }
+        throw new AuthenticationException("Invalid username[" + bind.getUser() + "] or password[" + bind.getPassword() + "]");
+      }
+      else {
+        LOG.error(e);
+        throw new SystemException(e.getMessage());
+      }
+    }
   }
 
   public String bind(BindStruct bind) throws AuthenticationException, BindException, TException, SystemException {
