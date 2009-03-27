@@ -2,24 +2,26 @@ package com.voxeo.tropo.remote;
 
 import java.net.InetAddress;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
 
+import com.voxeo.tropo.Configuration;
+import com.voxeo.tropo.remote.impl.TropoCloud;
+import com.voxeo.tropo.remote.impl.TropoIncomingCall;
 import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
 import com.voxeo.tropo.thrift.BindStruct;
 import com.voxeo.tropo.thrift.Notifier;
 import com.voxeo.tropo.thrift.SystemException;
-import com.voxeo.tropo.thrift.TropoService;
 import com.voxeo.tropo.thrift.Notifier.Processor;
+import com.voxeo.tropo.util.ScriptThreadPoolExecutor;
 import com.voxeo.tropo.util.Utils;
 
 public class Tropo implements Notifier.Iface, Runnable {
@@ -36,15 +38,13 @@ public class Tropo implements Notifier.Iface, Runnable {
   
   protected BindStruct _bind;
   
-  protected TTransport _transport;
+  protected TServerTransport _transport;
   
-  protected TServerTransport _listener;
+  protected TropoListener _listener;
   
   protected TServer _server;
   
-  protected String _key;
-  
-  protected TropoService.Client _tropo;
+  protected TropoCloud _tropo;
   
   protected String _token;
   
@@ -60,6 +60,28 @@ public class Tropo implements Notifier.Iface, Runnable {
 
   protected Object _monitorWaiter;
 
+  protected ExecutorService _pool = new ScriptThreadPoolExecutor(Configuration.get().getThreadSize() / 4, Configuration
+      .get().getThreadSize(), new ThreadFactory() {
+    public Thread newThread(final Runnable r) {
+      final Thread t = new Thread(new ThreadGroup("Scripts"), r, "Script", 0);
+      if (t.isDaemon()) {
+        t.setDaemon(true);
+      }
+      if (t.getPriority() != Thread.NORM_PRIORITY) {
+        t.setPriority(Thread.NORM_PRIORITY);
+      }
+      return t;
+    }
+  });
+  
+  public TropoListener getListener() {
+    return _listener;
+  }
+  
+  public void setListener(TropoListener listener) {
+    _listener = listener;
+  }
+  
   public synchronized void startup(Properties props) {
     _properties = new TropoProperties(props);
     _notifier = new Notifier.Processor(this);
@@ -86,11 +108,12 @@ public class Tropo implements Notifier.Iface, Runnable {
 
   public synchronized void shutdown() {
     _shutdown = true;
+    _pool.shutdown();
     try {
-      _tropo.unbind(_key);
-      _transport.close();
+      _tropo.unbind();
+      _tropo.disconnect();
       _server.stop();
-      _listener.close();
+      _transport.close();
     }
     catch(Exception e) {
       //ignore
@@ -118,17 +141,9 @@ public class Tropo implements Notifier.Iface, Runnable {
     int port = _properties.getPropertyAsInt(REMOTE_PORT);
     
     try {
-      try {
-        _transport = new TSocket(host, port);
-        _tropo = new TropoService.Client(new TBinaryProtocol(_transport));
-        _transport.open();
-        _key = _tropo.bind(_bind);      
-      }
-      catch(BindException e) {
-        // rebind
-      }
-      _listener = new TServerSocket(_bind.getPort());
-      _server = new TThreadPoolServer(_notifier, _listener);
+      _tropo = new TropoCloud(host, port, _bind);
+      _transport = new TServerSocket(_bind.getPort());
+      _server = new TThreadPoolServer(_notifier, _transport);
       new Thread(this, "Thrift").start();
     }
     catch(Exception e) {
@@ -192,7 +207,7 @@ public class Tropo implements Notifier.Iface, Runnable {
       _monitorWaiter = new Object();
       while(!_shutdown) {
         try {
-          _tropo.heartbeat(_key);
+          _tropo.heartbeat();
           _heartbeats = 0;
         }
         catch(Throwable t) {
@@ -227,8 +242,13 @@ public class Tropo implements Notifier.Iface, Runnable {
   }
 
   public void alert(String token, AlertStruct alert) throws TException {
-    if (_token.equals(token)) {
-      
+    if (_token.equals(token) && _listener != null) {
+      final Call call = new TropoIncomingCall((TropoCloud)_tropo.clone(), alert);
+      _pool.execute(new Runnable() {
+        public void run() {
+          _listener.onCall(call);
+        }
+      });
     }
   }
 
@@ -246,14 +266,12 @@ public class Tropo implements Notifier.Iface, Runnable {
     throw new AuthenticationException();
   }
 
-  public void unbind(String token) throws AuthenticationException, SystemException, TException {
+  public void unbind(String token) throws TException {
     if (_token.equals(token)) {
       System.out.println("Disconnected by Tropo clouds.");
-      _tropo.unbind(_key);
-      _key = null;
+      _tropo.unbind();
       return;
     }
-    throw new AuthenticationException();
   }
 
   public void run() {

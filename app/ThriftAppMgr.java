@@ -35,6 +35,7 @@ import com.voxeo.tropo.thrift.SystemException;
 import com.voxeo.tropo.thrift.TransferStruct;
 import com.voxeo.tropo.thrift.TropoException;
 import com.voxeo.tropo.thrift.TropoService;
+import com.voxeo.tropo.util.Utils;
 import com.voxeo.webcore.dns.URLByNumberGet;
 import com.voxeo.webcore.dns.URLByTokenGet;
 import com.voxeo.webcore.dns.VoxeoDNSException;
@@ -272,12 +273,14 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
   }
 
-  public void unbind(String token) throws AuthenticationException, SystemException, TException {
+  public void unbind(String token) throws TException {
     RemoteApplication app = _index.get(token);
     if (app != null) {
+      Utils.setLogContext(app, null);
+      LOG.info(app + " is disconnecting.");
       removeApplication(app);
+      app.dispose();
     }
-    app.dispose();
   }
 
   public void heartbeat(String token) throws AuthenticationException, SystemException, TException {
