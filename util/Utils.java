@@ -333,7 +333,7 @@ public class Utils {
     QName responseName = new QName("http://localhost/services", "getAccessTokenResponse");
 
     SOAPBodyElement bodyElement = (SOAPBodyElement) body.getChildElements(responseName).next();
-    String message1 = ((SOAPBodyElement) body.getChildElements(responseName).next()).getTextContent();
+    String message1 = bodyElement.getTextContent();
     return message1;
   }
 }
