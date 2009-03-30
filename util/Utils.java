@@ -30,6 +30,7 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Dispatch;
 import javax.xml.ws.Service;
 import javax.xml.ws.soap.SOAPBinding;
+import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -57,8 +58,6 @@ public class Utils {
 
   public static final String HOSTNAME;
 
-  private static final String _wsdlDocumentLocation = "http://evolution.voxeo.com/services/AccountManagement?wsdl";
-  
   static {
     String hostname;
     try {
@@ -280,9 +279,8 @@ public class Utils {
       return "ERROR";
     }
   }
-  
 
-  public static String authenticate(String username, String password) throws SOAPException, MalformedURLException {
+  public static String authenticate(String accountServer, String username, String password) throws SOAPFaultException, SOAPException, MalformedURLException {
     // Qnames for service as defined in wsdl.
     QName serviceName = new QName("http://localhost/services", "AccountManagementService");
 
@@ -290,7 +288,7 @@ public class Utils {
     QName portName = new QName("http://localhost/services", "AccountManagement");
 
     // Create a dynamic Service instance
-    Service service = Service.create(new URL(_wsdlDocumentLocation), serviceName);
+    Service service = Service.create(new URL(accountServer), serviceName);
 
     // Create a dispatch instance
     Dispatch<SOAPMessage> dispatch = service.createDispatch(portName, SOAPMessage.class, Service.Mode.MESSAGE);

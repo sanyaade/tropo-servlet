@@ -61,6 +61,8 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   protected int _serverPort = 9090;
   
   protected ApplicationCollector _collector;
+  
+  protected String _authenticationServer = "http://evolution.voxeo.com/services/AccountManagement?wsdl";
 
   @Override
   protected Application findApplication(URI uri) throws InvalidApplicationException, RedirectException {
@@ -134,6 +136,10 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   @SuppressWarnings("unchecked")
   @Override
   public void init(final ServletContext context, final Map<String, String> paras) {
+    String wsdl = paras.remove("authenticationServer");
+    if (wsdl != null && wsdl.length() > 0) {
+      _authenticationServer = wsdl.trim();
+    }
     String sport = paras.remove("thriftServicePort");
     if (sport != null && sport.length() > 0) {
       _serverPort = Integer.parseInt(sport);
@@ -189,7 +195,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
       throw new SystemException("Invalid account or application.");
     }
     try {
-      String token = Utils.authenticate(bind.getUser(), bind.getPassword());
+      String token = Utils.authenticate(_authenticationServer, bind.getUser(), bind.getPassword());
     }
     catch (SOAPFaultException e) {
       if (e.getMessage().contains("Invalid login")) {
