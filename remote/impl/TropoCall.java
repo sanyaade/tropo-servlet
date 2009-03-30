@@ -2,14 +2,18 @@ package com.voxeo.tropo.remote.impl;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.voxeo.tropo.remote.Call;
 import com.voxeo.tropo.remote.CallListener;
 import com.voxeo.tropo.remote.TropoEvent;
 import com.voxeo.tropo.thrift.AlertStruct;
+import com.voxeo.tropo.thrift.HangupStruct;
 import com.voxeo.tropo.thrift.PromptStruct;
 
 public class TropoCall implements Call {
+  protected static Map<String, Call> _calls = new ConcurrentHashMap<String, Call>();
+  
   protected AlertStruct _alert;
   
   protected TropoCloud _tropo;
@@ -17,6 +21,7 @@ public class TropoCall implements Call {
   protected TropoCall(TropoCloud tropo, AlertStruct alert) {
     _alert = alert;
     _tropo = tropo;
+    _calls.put(_alert.getId(), this);
   }
 
   public TropoEvent ask(String tts, Properties props, CallListener listener) {
@@ -62,6 +67,17 @@ public class TropoCall implements Call {
 
   public String getCallerName() {
     return _alert.getCallerName();
+  }
+
+  public void hangup() {
+    try {
+      HangupStruct info = _tropo.hangup(_alert.getId());
+      _calls.remove(this);
+    }
+    catch(Exception e) {
+      //TODO
+    }
+    
   }
 
 }

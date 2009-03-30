@@ -18,6 +18,8 @@ import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
 import com.voxeo.tropo.thrift.BindStruct;
+import com.voxeo.tropo.thrift.EndStruct;
+import com.voxeo.tropo.thrift.HangupStruct;
 import com.voxeo.tropo.thrift.Notifier;
 import com.voxeo.tropo.thrift.SystemException;
 import com.voxeo.tropo.thrift.Notifier.Processor;
@@ -281,5 +283,14 @@ public class Tropo implements Notifier.Iface, Runnable {
     catch(Throwable t) {
       t.printStackTrace();
     }
+  }
+
+  public void end(String token, String id, EndStruct end) throws TException {
+    // TODO Auto-generated method stub
+    
+  }
+
+  public void hangup(String token, String id, HangupStruct hangup) throws TException {
+    
   }
 }

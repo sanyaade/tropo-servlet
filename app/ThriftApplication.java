@@ -29,6 +29,7 @@ import com.voxeo.tropo.core.SimpleIncomingCall;
 import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
+import com.voxeo.tropo.thrift.HangupStruct;
 import com.voxeo.tropo.thrift.Notifier;
 import com.voxeo.tropo.thrift.PromptStruct;
 import com.voxeo.tropo.thrift.SystemException;
@@ -74,6 +75,20 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
 
   public synchronized void dispose() {
+    if (_calls != null) {
+      for(Call call : _calls.values()) {
+        call.hangup();
+        if (_notifier != null) {
+          try {
+            _notifier.hangup(_token, ((CallImpl)call).getId(), new HangupStruct());
+          }
+          catch(Exception e) {
+            //ignore
+          }
+        }
+      }
+      _calls = null;
+    }
     if (_transport != null && _notifier  != null) {
       try {
         _notifier.unbind(_token);
@@ -83,12 +98,6 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
       }
       _notifier = null;
       _transport.close();
-    }
-    if (_calls != null) {
-      for(Call call : _calls.values()) {
-        call.hangup();
-      }
-      _calls = null;
     }
   }
   
@@ -183,10 +192,11 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     }    
   }
   
-  void hangup(String id) throws TropoException, SystemException {
+  HangupStruct hangup(String id) throws TropoException, SystemException {
     Call call = getCall(id);
     try {
       call.hangup();
+      return new HangupStruct(); //TODO: 
     }
     catch(ErrorException e) {
       throw new TropoException(e.toString());

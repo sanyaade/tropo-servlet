@@ -10,4 +10,5 @@ public interface Call {
   TropoEvent say(String tts);
   TropoEvent ask(String tts, Properties props, CallListener listener);
   TropoEvent prompt(String tts, Properties props, CallListener listener);
+  void hangup();
 }

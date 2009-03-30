@@ -12,6 +12,7 @@ import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
 import com.voxeo.tropo.thrift.BindStruct;
+import com.voxeo.tropo.thrift.HangupStruct;
 import com.voxeo.tropo.thrift.PromptStruct;
 import com.voxeo.tropo.thrift.SystemException;
 import com.voxeo.tropo.thrift.TransferStruct;
@@ -62,8 +63,8 @@ public class TropoCloud implements Cloneable {
     return _tropo.call(_key, from, to, answerOnMedia, timeout);
   }
 
-  public void hangup(String id) throws AuthenticationException, TropoException, SystemException, TException {
-    _tropo.hangup(_key, id);
+  public HangupStruct hangup(String id) throws AuthenticationException, TropoException, SystemException, TException {
+    return _tropo.hangup(_key, id);
   }
 
   public void heartbeat() throws AuthenticationException, SystemException, TException {

@@ -31,6 +31,7 @@ import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
 import com.voxeo.tropo.thrift.BindException;
 import com.voxeo.tropo.thrift.BindStruct;
+import com.voxeo.tropo.thrift.HangupStruct;
 import com.voxeo.tropo.thrift.PromptStruct;
 import com.voxeo.tropo.thrift.SystemException;
 import com.voxeo.tropo.thrift.TransferStruct;
@@ -416,10 +417,10 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
   }
 
-  public void hangup(String key, String id) throws AuthenticationException, TropoException, SystemException, TException {
+  public HangupStruct hangup(String key, String id) throws AuthenticationException, TropoException, SystemException, TException {
     RemoteApplication app = _index.get(key);
     if (app != null && app instanceof ThriftApplication) {
-      ((ThriftApplication)app).hangup(id);
+      return ((ThriftApplication)app).hangup(id);
     }
     else {
       throw new AuthenticationException("Invalid key: " + key);
