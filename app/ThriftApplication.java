@@ -64,6 +64,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     _contacts = contacts;
     _calls = new ConcurrentHashMap<String, Call>();
     _key = Utils.getGUID(); 
+    setLogContext(null);
   }
   
   public ThriftApplication(final ThriftApplication shared, final String appId) throws AuthenticationException, SystemException, TException {
@@ -72,6 +73,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     _calls = new ConcurrentHashMap<String, Call>();
     _key = Utils.getGUID();
     _notifier = shared.getNotifier();
+    setLogContext(null);
   }
 
   public synchronized void dispose() {
@@ -120,6 +122,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
 
   public void execute(SipServletRequest invite) throws ScriptException, IOException {
+    setLogContext(invite);
     ((RemoteApplicationManager)getManager()).execute(invite, this);
   }
   
@@ -128,12 +131,17 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     SimpleCallFactory factory = new SimpleCallFactory(this, appSession);
     appSession.setAttribute(CALL_FACTORY, factory);
     CallImpl call = new SimpleIncomingCall(factory, invite, this);
+    LOG.info("Alerting " + this + " for incoming " + call);
     AlertStruct alert = new AlertStruct(call.getId(), getApplicationID(), call.getCallerId(), call.getCallerName(), call.getCalledId(), call.getCalledName());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Sending AlertStruct:" + alert.toString());
+    }
     _calls.put(call.getId(), call);
     getNotifier().alert(_token, alert);
   }
 
   public void execute(HttpServletRequest invite) throws ScriptException, IOException {
+    setLogContext(invite);
     ((RemoteApplicationManager)getManager()).execute(invite, this);
   }
   
@@ -161,6 +169,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   void answer(String id, int timeout) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       ((IncomingCall)call).answer(timeout);
@@ -177,6 +186,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   void reject(String id) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       ((IncomingCall)call).reject();
@@ -193,6 +203,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   HangupStruct hangup(String id) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       call.hangup();
@@ -207,6 +218,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
 
   void log(String id, String msg) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       call.log(msg);
@@ -220,6 +232,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   CallImpl transfer(String id, TransferStruct t) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       return (CallImpl)call.transfer(t.getTo(), t.getFrom(), t.isAnswerOnMedia(), t.getTimeout(), t.getTtsOrUrl(), t.getRepeat(), t.getGrammar());
@@ -233,6 +246,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   Map<String, String> prompt(String id, PromptStruct prompt) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       Map<String, String> result = call.prompt(prompt.getTtsOrUrl(), prompt.isBargein(), prompt.getGrammar(), prompt.getConfidence(), prompt.getMode(), prompt.getWait());
@@ -252,6 +266,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   void redirect(String id, String number) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       ((IncomingCall)call).redirect(number);
@@ -268,6 +283,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
 
   void block(String id, int timeout) throws TropoException, SystemException {
+    setLogContext(null);
     Call call = getCall(id);
     try {
       call.block(timeout);
@@ -281,6 +297,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   }
   
   CallImpl call(String from, String to, boolean answerOnMedia, int timeout) throws TropoException, SystemException {
+    setLogContext(null);
     SipApplicationSession appSession = getSipFactory().createApplicationSession();
     SimpleCallFactory factory = new SimpleCallFactory(this, appSession);
     appSession.setAttribute(CALL_FACTORY, factory);

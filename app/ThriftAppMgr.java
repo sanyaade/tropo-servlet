@@ -217,6 +217,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   }
 
   public String bind(BindStruct bind) throws AuthenticationException, BindException, TException, SystemException {
+    Utils.setLogContext(String.valueOf(bind.getAccountId()), "-1", "-1", "-1");
     if (LOG.isDebugEnabled()) {
       LOG.debug("bind-->" + bind.toString());
     }
@@ -225,6 +226,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     String applicationId = bind.getApplicationId();
     RemoteApplication oldapp = getApplication(accountId, applicationId);
     RemoteApplication newapp = new ThriftApplication(this, new ThriftURL(bind), accountId, applicationId, _contacts);
+    LOG.info(newapp.toString() + " has been created by " + bind.toString());
     putApplication(newapp);
     if (oldapp != null) {
       removeApplication(oldapp);

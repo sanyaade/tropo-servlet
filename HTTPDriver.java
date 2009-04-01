@@ -81,6 +81,7 @@ public class HTTPDriver extends HttpServlet {
       // set guid session id for logging
       ((ConvergedHttpSession) req.getSession()).getApplicationSession().setAttribute(ServletContextConstants.GUID_SESSION_ID, Utils.getGUID());
       final Application app = _appMgr.get(token, params);
+      Utils.setLogContext(app, req);
       app.execute(req);
       resp.setStatus(HttpServletResponse.SC_OK);
     }
