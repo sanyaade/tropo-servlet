@@ -206,12 +206,12 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
         throw new AuthenticationException("Invalid username[" + bind.getUser() + "] or password[" + bind.getPassword() + "]");
       }
       else {
-        LOG.error(e);
+        LOG.error(e.toString(), e);
         throw new SystemException(e.getMessage());
       }
     }
     catch (Exception e) {
-      LOG.error(e);
+      LOG.error(e.toString(), e);
       throw new SystemException(e.getMessage());
     }
   }
