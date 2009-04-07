@@ -77,7 +77,7 @@ public abstract class AbstractInstance implements ApplicationInstance {
 
   @Override
   public String toString() {
-    return "ApplicationInstance[" + getApp().getURL() + ", " + _sessionId + "] ver(" + _app.getManager().getVersionNo() + ")";
+    return "ApplicationInstance[" + getApp().getURL() + ", " + _sessionId + "]";
   }
 
 }

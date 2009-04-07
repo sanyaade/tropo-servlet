@@ -81,8 +81,6 @@ public class SimpleCall implements CallImpl {
 
   protected boolean _isMixed = false;
   
-  protected String _version;
-  
   protected ApplicationMonitor _monitor;
 
   protected long _createdTime = System.currentTimeMillis();
@@ -91,12 +89,10 @@ public class SimpleCall implements CallImpl {
 
   public SimpleCall(final SimpleCallFactory callFactory, final SipServletRequest invite, final ApplicationInstance inst) {
     this(callFactory, inst.getApp().getManager().getSipFactory(), inst.getApp().getManager().getMrcpFactory(), invite);
-    _version = inst.getApp().getManager().getVersionNo();
   }
   
   public SimpleCall(final SimpleCallFactory callFactory, final SipServletRequest invite, final Application app) {
     this(callFactory, app.getManager().getSipFactory(), app.getManager().getMrcpFactory(), invite);
-    _version = app.getManager().getVersionNo();
   }
   
   SimpleCall(final SimpleCallFactory callFactory, final SipFactory sipFactory, final MrcpFactory mrcpFactory, final SipServletRequest invite) {
@@ -499,7 +495,7 @@ public class SimpleCall implements CallImpl {
 
   @Override
   public String toString() {
-    return "Call[" + _callerId + "->" + _calledId + "] ver(" + _version + ")";
+    return "Call[" + _callerId + "->" + _calledId + "]";
   }
 
   protected void stateChanged(final State oldState, final State newState) {

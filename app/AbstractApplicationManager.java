@@ -89,7 +89,7 @@ public abstract class AbstractApplicationManager implements ApplicationManager {
       LOG.error(t.toString(), t);
       _tropoBuildNo = "Unknown";
     }
-    LOG.info("Tropo server / " + toString() + " / " + getVersionNo() + " / " + getBuildNo());
+    LOG.info(toString() + " / " + getVersionNo() + " / " + getBuildNo());
   }
 
   public SipFactory getSipFactory() {
