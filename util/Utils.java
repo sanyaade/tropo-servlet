@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -335,5 +336,12 @@ public class Utils {
     SOAPBodyElement bodyElement = (SOAPBodyElement) body.getChildElements(responseName).next();
     String message1 = bodyElement.getTextContent();
     return message1;
+  }
+
+  public static void clearLogContext() {
+    final Hashtable<?, ?> context = MDC.getContext();
+    if (context != null) {
+      context.clear();
+    }
   }
 }

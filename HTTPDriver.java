@@ -7,6 +7,7 @@ import java.util.Properties;
 import javax.annotation.Resource;
 import javax.script.ScriptException;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,7 +46,17 @@ public class HTTPDriver extends HttpServlet {
 
     _appMgr = (ApplicationManager)ctx.getAttribute(ServletContextConstants.APP_MANAGER);
   }
-  
+
+  @Override
+  protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    try {
+      super.service(req, res);
+    }
+    finally {
+      Utils.clearLogContext();
+    }
+  }
+
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);

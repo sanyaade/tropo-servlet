@@ -8,6 +8,8 @@ import javax.script.ScriptException;
 import javax.sdp.SessionDescription;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.sip.Address;
 import javax.servlet.sip.SipApplicationSession;
 import javax.servlet.sip.SipFactory;
@@ -69,6 +71,16 @@ public class SIPDriver extends SipServlet {
   @Override
   public void destroy() {
     _appMgr.dispose();
+  }
+  
+  @Override
+  public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+    try {
+      super.service(req, res);
+    }
+    finally {
+      Utils.clearLogContext();
+    }
   }
 
   @Override

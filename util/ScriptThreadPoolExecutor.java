@@ -1,12 +1,10 @@
 package com.voxeo.tropo.util;
 
-import java.util.Hashtable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.MDC;
 
 public class ScriptThreadPoolExecutor extends ThreadPoolExecutor {
 
@@ -22,10 +20,7 @@ public class ScriptThreadPoolExecutor extends ThreadPoolExecutor {
 
   @Override
   protected void afterExecute(final Runnable r, final Throwable t) {
-    final Hashtable<?, ?> context = MDC.getContext();
-    if (context != null) {
-      context.clear();
-    }
+    Utils.clearLogContext();
     super.afterExecute(r, t);
   }
 
