@@ -63,7 +63,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   
   protected ApplicationCollector _collector;
   
-  protected String _authenticationServer = "http://evolution.voxeo.com/services/AccountManagement?wsdl";
+  protected String _authenticationServer = "http://evolution-internal.voxeo.com/services/AccountManagement?wsdl";
 
   @Override
   protected Application findApplication(URI uri) throws InvalidApplicationException, RedirectException {
