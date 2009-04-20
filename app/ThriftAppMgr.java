@@ -51,11 +51,13 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   
   protected Map<String, RemoteApplication> _index;
   
-  protected Map<String, ApplicationInstance> _insts;
+  //protected Map<String, ApplicationInstance> _insts;
     
-  protected TServer _server;
+  protected TServer _inboundServer;
   
-  protected TServerTransport _transport;
+  protected TServerTransport _inboundTransport;
+  
+  protected ThrifNotifyService _outboundNotifyServer;
   
   protected List<SipURI> _contacts;
   
@@ -150,9 +152,13 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     _apps = new ConcurrentHashMap<Integer, ConcurrentMap<String, RemoteApplication>>();
     _index = new ConcurrentHashMap<String, RemoteApplication>();
     try {
-      _transport = new TServerSocket(_serverPort);
-      _server = new TThreadPoolServer(new TropoService.Processor(this), _transport);
+      _inboundTransport = new TServerSocket(_serverPort);
+      _inboundServer = new TThreadPoolServer(new TropoService.Processor(this), _inboundTransport);
+      int reverseTcpPort = _serverPort + 1;
+      
+      _outboundNotifyServer = new ThrifNotifyService(_index, reverseTcpPort);
       new Thread(this, "Thrift").start();
+      new Thread(_outboundNotifyServer, "ThriftReverse").start();
       _collector = new ApplicationCollector();
       new Thread(_collector, "ApplicationCollector").start();
     }
@@ -164,8 +170,9 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   
   @Override
   public void dispose() {
-    _transport.close();
-    _server.stop();
+    _inboundTransport.close();
+    _inboundServer.stop();
+    _outboundNotifyServer.stop();
     _collector.stop();
     _apps.clear();
     super.dispose();
@@ -177,7 +184,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
 
   public void run() {
     LOG.info("Starting Thrift service on port " + _serverPort);
-    _server.serve();
+    _inboundServer.serve();
     LOG.info("Stopping Thrift service on port " + _serverPort);
   }
 

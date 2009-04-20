@@ -15,8 +15,6 @@ import javax.servlet.sip.annotation.SipListener;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 
 import com.voxeo.tropo.ErrorException;
@@ -28,7 +26,6 @@ import com.voxeo.tropo.core.SimpleCallFactory;
 import com.voxeo.tropo.core.SimpleIncomingCall;
 import com.voxeo.tropo.thrift.AlertStruct;
 import com.voxeo.tropo.thrift.AuthenticationException;
-import com.voxeo.tropo.thrift.BindException;
 import com.voxeo.tropo.thrift.HangupStruct;
 import com.voxeo.tropo.thrift.Notifier;
 import com.voxeo.tropo.thrift.PromptStruct;
@@ -64,6 +61,7 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     _contacts = contacts;
     _calls = new ConcurrentHashMap<String, Call>();
     _key = Utils.getGUID(); 
+    _token = url.getAuthority();
     setLogContext(null);
   }
   
@@ -105,6 +103,8 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   
   protected synchronized Notifier.Client getNotifier() throws AuthenticationException, SystemException, TException {
     if (_notifier == null) {
+      throw new AuthenticationException("Notifier is empty!");
+      /*
       _transport = new TSocket(_url.getHost(), _url.getPort());
       TBinaryProtocol binaryProtocol = new TBinaryProtocol(_transport);
       Notifier.Client notifier = new Notifier.Client(binaryProtocol);
@@ -114,13 +114,17 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
         _notifier = notifier;
         LOG.info(notifier + " is connectioned.");
       }
-      catch(BindException e) {
-        //TODO: rebind
+      catch (BindException e) {
+        // TODO: rebind
       }
+      */
     }
     return _notifier;
   }
 
+  public synchronized void setNotifier(Notifier.Client notifier) {
+    _notifier = notifier;
+  }
   public void execute(SipServletRequest invite) throws ScriptException, IOException {
     setLogContext(invite);
     ((RemoteApplicationManager)getManager()).execute(invite, this);
@@ -312,10 +316,10 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
       _beats = 0;
       return true;
     }
-    catch(Throwable e) {
+    catch (Throwable e) {
       _beats++;
       LOG.error(e);
-      return _beats > 2? false : true;
+      return _beats > 2 ? false : true;
     }
   }
 }

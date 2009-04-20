@@ -95,6 +95,10 @@ public class TropoCloud implements Cloneable {
     _tropo.unbind(_key);
   }
   
+  public String getKey() {
+    return this._key;
+  }
+
   @Override
   public Object clone() {
     try {
