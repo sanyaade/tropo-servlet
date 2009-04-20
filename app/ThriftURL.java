@@ -12,6 +12,8 @@ public class ThriftURL implements ApplicationURL {
   String _secret;
 
   ThriftURL(BindStruct bind) {
+    _host = bind.getHost();
+    _port = bind.getPort();
     _secret = bind.getSecret();
   }
   
@@ -28,10 +30,6 @@ public class ThriftURL implements ApplicationURL {
     return _host;
   }
 
-  public void setHost(String host) {
-    _host = host;
-  }
-
   public long getLastAccessedTime() {
     // TODO Auto-generated method stub
     return 0;
@@ -44,10 +42,6 @@ public class ThriftURL implements ApplicationURL {
 
   public int getPort() {
     return _port;
-  }
-
-  public void setPort(int port) {
-    _port = port;
   }
 
   public String getProtocol() {

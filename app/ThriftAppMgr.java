@@ -53,11 +53,9 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   
   //protected Map<String, ApplicationInstance> _insts;
     
-  protected TServer _inboundServer;
+  protected TServer _server;
   
-  protected TServerTransport _inboundTransport;
-  
-  protected ThrifNotifyService _outboundNotifyServer;
+  protected TServerTransport _transport;
   
   protected List<SipURI> _contacts;
   
@@ -152,13 +150,9 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     _apps = new ConcurrentHashMap<Integer, ConcurrentMap<String, RemoteApplication>>();
     _index = new ConcurrentHashMap<String, RemoteApplication>();
     try {
-      _inboundTransport = new TServerSocket(_serverPort);
-      _inboundServer = new TThreadPoolServer(new TropoService.Processor(this), _inboundTransport);
-      int reverseTcpPort = _serverPort + 1;
-      
-      _outboundNotifyServer = new ThrifNotifyService(_index, reverseTcpPort);
+      _transport = new TServerSocket(_serverPort);
+      _server = new TThreadPoolServer(new TropoService.Processor(this), _transport);
       new Thread(this, "Thrift").start();
-      new Thread(_outboundNotifyServer, "ThriftReverse").start();
       _collector = new ApplicationCollector();
       new Thread(_collector, "ApplicationCollector").start();
     }
@@ -170,9 +164,8 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
   
   @Override
   public void dispose() {
-    _inboundTransport.close();
-    _inboundServer.stop();
-    _outboundNotifyServer.stop();
+    _transport.close();
+    _server.stop();
     _collector.stop();
     _apps.clear();
     super.dispose();
@@ -184,7 +177,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
 
   public void run() {
     LOG.info("Starting Thrift service on port " + _serverPort);
-    _inboundServer.serve();
+    _server.serve();
     LOG.info("Stopping Thrift service on port " + _serverPort);
   }
 

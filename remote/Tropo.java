@@ -6,9 +6,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.server.TServer;
+import org.apache.thrift.server.TThreadPoolServer;
+import org.apache.thrift.transport.TServerSocket;
+import org.apache.thrift.transport.TServerTransport;
 
 import com.voxeo.tropo.Configuration;
 import com.voxeo.tropo.remote.impl.TropoCloud;
@@ -38,11 +39,11 @@ public class Tropo implements Notifier.Iface, Runnable {
   
   protected BindStruct _bind;
   
-  protected TTransport _rcv_transport;
-  
-  protected TBinaryProtocol _rcv_protocol;
+  protected TServerTransport _transport;
   
   protected TropoListener _listener;
+  
+  protected TServer _server;
   
   protected TropoCloud _tropo;
   
@@ -112,7 +113,8 @@ public class Tropo implements Notifier.Iface, Runnable {
     try {
       _tropo.unbind();
       _tropo.disconnect();
-      _rcv_transport.close();
+      _server.stop();
+      _transport.close();
     }
     catch(Exception e) {
       //ignore
@@ -131,28 +133,19 @@ public class Tropo implements Notifier.Iface, Runnable {
     _bind.setApplicationId(_properties.getProperty(APPLICATION_ID));
     _bind.setUser(_properties.getProperty(USER));
     _bind.setPassword(_properties.getProperty(PASSWORD));
+    _bind.setHost(_properties.getProperty(LOCAL_HOST));
+    _bind.setPort(_properties.getPropertyAsInt(LOCAL_PORT));
     _bind.setSecret(Utils.getGUID());
     
     _token = Utils.getGUID();
     String host = _properties.getProperty(REMOTE_HOST);
     int port = _properties.getPropertyAsInt(REMOTE_PORT);
-
+    
     try {
       _tropo = new TropoCloud(host, port, _bind);
-      // start reverse TCP connection
-      _rcv_transport = new TSocket(host, port + 1);
-      _rcv_transport.open();
-      _rcv_protocol = new TBinaryProtocol(_rcv_transport);
-      Notifier.Client client = new Notifier.Client(_rcv_protocol);
-      try {
-        client.bind(_tropo.getKey());
-      }
-      catch (BindException e) {
-        e.printStackTrace();
-        // rebind
-      }
+      _transport = new TServerSocket(_bind.getPort());
+      _server = new TThreadPoolServer(_notifier, _transport);
       new Thread(this, "Thrift").start();
-      // end reverse TCP connection
     }
     catch(Exception e) {
       throw new RuntimeException(e);
@@ -283,15 +276,11 @@ public class Tropo implements Notifier.Iface, Runnable {
   }
 
   public void run() {
-    Notifier.Processor p = new Notifier.Processor(this);
     try {
-      while (true) {
-        p.process(_rcv_protocol, _rcv_protocol);
-      }
+      _server.serve();
     }
-    catch (Throwable t) {
+    catch(Throwable t) {
       t.printStackTrace();
-      _rcv_transport.close();
     }
   }
 
