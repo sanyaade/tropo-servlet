@@ -29,6 +29,7 @@ import com.voxeo.sipmethod.mrcp.client.MrcpClient;
 import com.voxeo.sipmethod.mrcp.client.MrcpConstants;
 import com.voxeo.sipmethod.mrcp.client.MrcpFactory;
 import com.voxeo.sipmethod.mrcp.client.MrcpSession;
+import com.voxeo.sipmethod.mrcp.client.MrcpTtsResult;
 import com.voxeo.sipmethod.mrcp.client.MrcpTtsSession;
 import com.voxeo.sipmethod.mrcp.client.RecognizerRequestHandle;
 import com.voxeo.sipmethod.mrcp.client.RecorderRequestHandle;
@@ -80,33 +81,35 @@ public class SimpleCall implements CallImpl {
   protected SimpleCall _peerLeg;
 
   protected boolean _isMixed = false;
-  
+
   protected ApplicationMonitor _monitor;
 
   protected long _createdTime = System.currentTimeMillis();
-  
+
   protected String _id;
 
   public SimpleCall(final SimpleCallFactory callFactory, final SipServletRequest invite, final ApplicationInstance inst) {
     this(callFactory, inst.getApp().getManager().getSipFactory(), inst.getApp().getManager().getMrcpFactory(), invite);
   }
-  
+
   public SimpleCall(final SimpleCallFactory callFactory, final SipServletRequest invite, final Application app) {
     this(callFactory, app.getManager().getSipFactory(), app.getManager().getMrcpFactory(), invite);
   }
-  
-  SimpleCall(final SimpleCallFactory callFactory, final SipFactory sipFactory, final MrcpFactory mrcpFactory, final SipServletRequest invite) {
+
+  SimpleCall(final SimpleCallFactory callFactory, final SipFactory sipFactory, final MrcpFactory mrcpFactory,
+      final SipServletRequest invite) {
     _callFactory = callFactory;
     _mrcpFactory = mrcpFactory;
     _sipFactory = sipFactory;
-    _monitor = (ApplicationMonitor)invite.getSession().getServletContext().getAttribute(ServletContextConstants.APP_MONITOR);
+    _monitor = (ApplicationMonitor) invite.getSession().getServletContext().getAttribute(
+        ServletContextConstants.APP_MONITOR);
     updateInvite(invite);
     _callerId = extractId(_invite.getFrom().getURI());
     _calledId = extractId(_invite.getTo().getURI());
     _calledName = _invite.getFrom().getDisplayName();
     _callerName = _invite.getTo().getDisplayName();
     if (_monitor != null) {
-      _monitor.incCallCounter();   
+      _monitor.incCallCounter();
     }
     _id = _sipSession.getCallId();
   }
@@ -249,11 +252,12 @@ public class SimpleCall implements CallImpl {
         }
       }
 
+      MrcpTtsResult ttsResult = null;
       if (ttsOrUrl != null && ttsOrUrl.length() > 0) {
-        getTTS().speak(Utils.genSSML(ttsOrUrl, Configuration.get().isParseSpeechText()), buildSpeakProperties(bargein),
-            Configuration.get().getMaxTimeSpeak());
+        ttsResult = getTTS().speak(Utils.genSSML(ttsOrUrl, Configuration.get().isParseSpeechText()),
+            buildSpeakProperties(bargein), Configuration.get().getMaxTimeSpeak());
       }
-      if (beep) {
+      if (beep && ttsResult.getReturnCode() != MrcpTtsSession.TTS_RC_BARGEIN) {
         getTTS().play(new URL(Configuration.get().getBeepURL()), true, 3000);
       }
 
@@ -299,7 +303,7 @@ public class SimpleCall implements CallImpl {
     MrcpRTCListener listener = null;
     if (grammar != null && grammar.length() > 0) {
       listener = MrcpRTCListener.create(getASR(), GrammarFactory.createGrammar(grammar, Grammar.Type.SIMPLE,
-          InputMode.dtmf), (int) timeout);
+          InputMode.dtmf), timeout);
       listener.start();
     }
     MrcpBackgroundAudioPlayer player = null;
@@ -407,7 +411,7 @@ public class SimpleCall implements CallImpl {
 
   public void await(final long time) throws InterruptedException {
     if (time < 0) {
-      //_stateCondition.await(); // Do we have any use case to wait forever???
+      // _stateCondition.await(); // Do we have any use case to wait forever???
     }
     else {
       _stateCondition.await(time, TimeUnit.MILLISECONDS);
@@ -663,7 +667,10 @@ public class SimpleCall implements CallImpl {
     final Properties properties = new Properties();
     properties.setProperty("Speech-Language", Configuration.get().getTtsSpeechLanguage());
     if (bargin) {
-      properties.setProperty("Kill-On-Barge-In", Boolean.toString(Configuration.get().isKillOnBargeIn()));
+      properties.setProperty("Kill-On-Barge-In", "true");
+    }
+    else {
+      properties.setProperty("Kill-On-Barge-In", "false");
     }
     return properties;
   }
@@ -724,8 +731,8 @@ public class SimpleCall implements CallImpl {
     }
     return retval;
   }
-  
-  public String getHeader(String name) {
+
+  public String getHeader(final String name) {
     return _invite.getHeader(name);
   }
 
