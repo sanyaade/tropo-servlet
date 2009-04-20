@@ -12,7 +12,6 @@ import javax.servlet.sip.SipSession;
 
 import com.micromethod.common.util.jmx.JmxHelper;
 import com.micromethod.common.util.jmx.ObjectNameFactory;
-import com.voxeo.tropo.core.Call;
 import com.voxeo.tropo.core.CallImpl;
 
 public class DumpHelper {
