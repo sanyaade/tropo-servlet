@@ -37,6 +37,7 @@ import com.voxeo.tropo.thrift.SystemException;
 import com.voxeo.tropo.thrift.TransferStruct;
 import com.voxeo.tropo.thrift.TropoException;
 import com.voxeo.tropo.thrift.TropoService;
+import com.voxeo.tropo.transport.reversetcp.TSocketFactory;
 import com.voxeo.tropo.util.Utils;
 import com.voxeo.webcore.dns.URLByNumberGet;
 import com.voxeo.webcore.dns.URLByTokenGet;
@@ -155,6 +156,8 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
       new Thread(this, "Thrift").start();
       _collector = new ApplicationCollector();
       new Thread(_collector, "ApplicationCollector").start();
+      // init the reverse TCP connection factory
+      TSocketFactory.getInstance(_serverPort + 1);
     }
     catch(Exception e) {
       LOG.error(e.toString(), e);
@@ -168,6 +171,7 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     _server.stop();
     _collector.stop();
     _apps.clear();
+    TSocketFactory.shutdown();
     super.dispose();
   }
 

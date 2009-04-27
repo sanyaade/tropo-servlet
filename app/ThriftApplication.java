@@ -16,7 +16,6 @@ import javax.servlet.sip.annotation.SipListener;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 
 import com.voxeo.tropo.ErrorException;
@@ -35,6 +34,7 @@ import com.voxeo.tropo.thrift.PromptStruct;
 import com.voxeo.tropo.thrift.SystemException;
 import com.voxeo.tropo.thrift.TransferStruct;
 import com.voxeo.tropo.thrift.TropoException;
+import com.voxeo.tropo.transport.reversetcp.TSocketFactory;
 import com.voxeo.tropo.util.Utils;
 
 @SipListener
@@ -105,14 +105,15 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
   
   protected synchronized Notifier.Client getNotifier() throws AuthenticationException, SystemException, TException {
     if (_notifier == null) {
-      _transport = new TSocket(_url.getHost(), _url.getPort());
+      //_transport = new TSocket(_url.getHost(), _url.getPort());
+      _transport = TSocketFactory.getInstance(((ThriftAppMgr) getManager())._serverPort + 1).getTransport(getApplicationKey());
       TBinaryProtocol binaryProtocol = new TBinaryProtocol(_transport);
       Notifier.Client notifier = new Notifier.Client(binaryProtocol);
-      _transport.open();
+      //_transport.open();
       try {
         _token = notifier.bind(_url.getAuthority());
         _notifier = notifier;
-        LOG.info(notifier + " is connectioned.");
+        LOG.info(notifier + " is connectioned to token=" + _token);
       }
       catch (BindException e) {
         // TODO: rebind
