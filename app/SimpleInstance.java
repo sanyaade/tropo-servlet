@@ -137,9 +137,10 @@ public class SimpleInstance extends AbstractInstance {
         LOG.error(toString() + " no field with name 'engine' or '_engine' . " + buf.toString());
         return eng;
       }
+      final boolean accessibility = f.isAccessible();
       f.setAccessible(true);
       f.set(cs, eng);
-      f.setAccessible(false);
+      f.setAccessible(accessibility);
       if (LOG.isDebugEnabled()) {
         LOG.debug(toString() + " replaced script engine [" + oldEng + "] --> [" + cs.getEngine() + "] in field <" + fn + ">");
       }
