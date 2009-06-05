@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletConfig;
 
@@ -123,10 +125,10 @@ public class Configuration {
   private int threadSize = 400;
 
   @StringPart
-  private Map<String, String> sandboxAllow = new HashMap<String, String>();
+  private Map<String, Set> sandboxAllow = new HashMap<String, Set>();
 
   @StringPart
-  private Map<String, String> sandboxForbid = new HashMap<String, String>();
+  private Map<String, Set> sandboxForbid = new HashMap<String, Set>();
 
   public static Configuration get() {
     if (INSTANCE == null) {
@@ -433,7 +435,12 @@ public class Configuration {
       for(Element i:is){
         String action = i.getAttributeValue("action");
         String target = i.getTextNormalize().toLowerCase();
-        sandboxAllow.put(target, action);
+        Set t = sandboxAllow.get(action);
+        if(t==null){
+          t=new HashSet();
+          sandboxAllow.put(action, t);
+        }
+        t.add(target);
       }
     }
     as = s.getChildren("forbid");
@@ -442,7 +449,12 @@ public class Configuration {
       for(Element i:is){
         String action = i.getAttributeValue("action");
         String target = i.getTextNormalize().toLowerCase();
-        sandboxForbid.put(target, action);
+        Set t = sandboxForbid.get(action);
+        if(t==null){
+          t=new HashSet();
+          sandboxForbid.put(action, t);
+        }
+        t.add(target);
       }
     }
   }
@@ -450,14 +462,14 @@ public class Configuration {
   /**
    * @return the sandboxForbid
    */
-  Map<String, String> getSandboxForbid() {
+  Map<String, Set> getSandboxForbid() {
     return sandboxForbid;
   }
 
   /**
    * @return the sandboxAllow
    */
-  Map<String, String> getSandboxAllow() {
+  Map<String, Set> getSandboxAllow() {
     return sandboxAllow;
   }
 }

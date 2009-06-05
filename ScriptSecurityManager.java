@@ -50,9 +50,19 @@ public class ScriptSecurityManager extends SecurityManager {
       "org.jruby", "org.python", "com.ziclix.python", "org.mozilla.javascript",
       "org.codehaus.groovy", "groovy", "com.caucho",
   };
-  private Map<String, String> _allow = null;
+  /**
+   * key-action
+   * 
+   * value- a set of all allowed target
+   */
+  private Map<String, Set> _allow = null;
 
-  private Map<String, String> _forbid = null;
+  /**
+   * key-action
+   * 
+   * value- a set of all disallowed target
+   */
+  private Map<String, Set> _forbid = null;
 
   
   public ScriptSecurityManager(ServletContext ctx) {
@@ -163,14 +173,14 @@ public class ScriptSecurityManager extends SecurityManager {
         String action = p.getActions().toLowerCase();
         String abase = normalize(((LocalApplication)(ai.getApp())).getBaseDir());
         // check the forbid configuration in tropo.xml first
-        if (_forbid.containsKey(target) && _forbid.get(target).equals(action)) {
+        if (_forbid.containsKey(action) && _forbid.get(action).contains(target)) {
           if (LOG.isDebugEnabled()) {
             LOG.debug("No " + action + " FilePermission to " + target);
           }
           throw new SecurityException("No " + action + " FilePermission to " + target);
         }
         // check the allow configuration in tropo.xml
-        if (_allow.containsKey(target) && _allow.get(target).equals(action)) {
+        if (_allow.containsKey(action) && _allow.get(target).contains(target)) {
           return;
         }
         
