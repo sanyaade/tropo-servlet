@@ -230,8 +230,13 @@ public class ScriptSecurityManager extends SecurityManager {
           //this is a temporary fix for running groovy
           return;
         }
-        else if (target.indexOf("c:\\documents and settings") >= 0 ) {
+        else if (target.toLowerCase().indexOf("c:\\documents and settings") >= 0 ) {
           //this is a temporary fix for running jruby  / require 'rest_client' , script/rest_client.rb
+          return;
+        }
+        else if (target.toLowerCase().indexOf("c:\\windows\\temp") >= 0) {
+          // this is a temporary fix for running JRUBY URL open a large remote file that needs a
+          // temp cache
           return;
         }
         else {
