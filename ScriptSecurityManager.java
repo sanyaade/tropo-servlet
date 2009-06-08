@@ -11,6 +11,7 @@ import java.security.Permission;
 import java.security.Security;
 import java.security.SecurityPermission;
 import java.security.Signature;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.PropertyPermission;
 import java.util.Set;
@@ -24,6 +25,8 @@ import javax.sound.sampled.AudioPermission;
 
 import org.apache.log4j.Logger;
 
+import sun.security.util.SecurityConstants;
+
 import com.voxeo.tropo.app.ApplicationInstance;
 import com.voxeo.tropo.app.LocalApplication;
 import com.voxeo.tropo.app.SimpleInstance;
@@ -35,6 +38,7 @@ import com.voxeo.tropo.util.Utils;
  * case no matter whether there are capital letters in the pat or not
  */
 public class ScriptSecurityManager extends SecurityManager {
+  
   private static final Logger LOG = Logger.getLogger(ScriptSecurityManager.class);
   
   private String _base;
@@ -53,16 +57,16 @@ public class ScriptSecurityManager extends SecurityManager {
   /**
    * key-action
    * 
-   * value- a set of all allowed target
+   * value- a set of all allowed target which starts with something in this set
    */
-  private Map<String, Set> _allow = null;
+  private Map<String, Set<String>> _allow = null;
 
   /**
    * key-action
    * 
-   * value- a set of all disallowed target
+   * value- a set of all disallowed target which starts with something in this set
    */
-  private Map<String, Set> _forbid = null;
+  private Map<String, Set<String>> _forbid = null;
 
   
   public ScriptSecurityManager(ServletContext ctx) {
@@ -82,9 +86,70 @@ public class ScriptSecurityManager extends SecurityManager {
     LOG.info("Tropo Jython directory is " + _jython);
     _allow = Configuration.get().getSandboxAllow();
     _forbid = Configuration.get().getSandboxForbid();
+    allowSysTempDirs();
+    LOG.info("Allow preconfigured permissions:" + _allow);
+    LOG.info("Forbid preconfigured permissions:" + _forbid);
     securityInitialization();
   }
   
+  public void allowSysTempDirs() {
+    Set<String> s = new HashSet();
+    // for MAC OS
+    String t = System.getenv("TMPDIR");
+    if (t != null && t.length() > 0) {
+      s.add(normalize(t));
+    }
+    // for Windows OS
+    t = System.getenv("TEMP");
+    if (t != null && t.length() > 0) {
+      s.add(normalize(t));
+    }
+    t = System.getenv("TMP");
+    if (t != null && t.length() > 0) {
+      s.add(normalize(t));
+    }
+
+    // allowing all permissions
+    addRestrictions(_allow, SecurityConstants.FILE_READ_ACTION, s);
+    addRestrictions(_allow, SecurityConstants.FILE_WRITE_ACTION, s);
+    addRestrictions(_allow, SecurityConstants.FILE_DELETE_ACTION, s);
+    addRestrictions(_allow, SecurityConstants.FILE_EXECUTE_ACTION, s);
+  }
+
+  private void addRestrictions(Map<String, Set<String>> m, String key, Set<String> s) {
+    Set<String> t = m.get(key);
+    if (t == null) {
+      m.put(key, s);
+    }
+    else {
+      t.addAll(s);
+    }
+  }
+  
+  public boolean isPreconfiguredAllow(String action, String target) {
+    Set<String> e = _allow.get(action);
+    if (e != null) {
+      for (String s : e) {
+        if (target.startsWith(s)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean isPreconfiguredForbid(String action, String target) {
+    Set<String> e = _forbid.get(action);
+    if (e != null) {
+      for (String s : e) {
+        if (target.startsWith(s)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   void securityInitialization() {
     try {
       Security.getProviders();
@@ -173,19 +238,19 @@ public class ScriptSecurityManager extends SecurityManager {
         String action = p.getActions().toLowerCase();
         String abase = normalize(((LocalApplication)(ai.getApp())).getBaseDir());
         // check the forbid configuration in tropo.xml first
-        if (_forbid.containsKey(action) && _forbid.get(action).contains(target)) {
+        if (isPreconfiguredForbid(action, target)) {
           if (LOG.isDebugEnabled()) {
             LOG.debug("No " + action + " FilePermission to " + target);
           }
           throw new SecurityException("No " + action + " FilePermission to " + target);
         }
         // check the allow configuration in tropo.xml
-        if (_allow.containsKey(action) && _allow.get(target).contains(target)) {
+        if (isPreconfiguredAllow(action, target)) {
           return;
         }
         
         if (target.startsWith(abase)) {
-          if ("execute".equals(action)) {
+          if (SecurityConstants.FILE_EXECUTE_ACTION.equals(action)) {
             if (LOG.isDebugEnabled()) {
               LOG.debug("No execute FilePermission to " + target);
             }
@@ -196,10 +261,10 @@ public class ScriptSecurityManager extends SecurityManager {
           }
         }
         else if (isReservedTarget(target)) {
-          if ("read".equals(action)) {
+          if (SecurityConstants.FILE_READ_ACTION.equals(action)) {
             return;
           }
-          else if ((target.startsWith(_jython) || target.startsWith(_jruby)) && target.endsWith(".class") && "write".equals(action)) {
+          else if ((target.startsWith(_jython) || target.startsWith(_jruby)) && target.endsWith(".class") && SecurityConstants.FILE_WRITE_ACTION.equals(action)) {
             return;
           }
           else {
@@ -210,10 +275,10 @@ public class ScriptSecurityManager extends SecurityManager {
           }
         }
         else if (target.startsWith(_base)) {
-          if ("read".equals(action)) {
+          if (SecurityConstants.FILE_READ_ACTION.equals(action)) {
             return;
           }
-          if ("write".equals(action) && (target.startsWith(_base + "logs") || target.startsWith(_base + "slogs"))) {
+          if (SecurityConstants.FILE_WRITE_ACTION.equals(action) && (target.startsWith(_base + "logs") || target.startsWith(_base + "slogs"))) {
             return;
           }
           else {
@@ -224,7 +289,7 @@ public class ScriptSecurityManager extends SecurityManager {
           }
         }
         else if (target.indexOf("__classpath__") >= 0) {
-          if ("read".equals(action)) {
+          if (SecurityConstants.FILE_READ_ACTION.equals(action)) {
             return;
           }
           else {
@@ -242,11 +307,6 @@ public class ScriptSecurityManager extends SecurityManager {
         }
         else if (target.toLowerCase().indexOf("c:\\documents and settings") >= 0 ) {
           //this is a temporary fix for running jruby  / require 'rest_client' , script/rest_client.rb
-          return;
-        }
-        else if (target.toLowerCase().indexOf("c:\\windows\\temp") >= 0) {
-          // this is a temporary fix for running JRUBY URL open a large remote file that needs a
-          // temp cache
           return;
         }
         else {
@@ -294,13 +354,13 @@ public class ScriptSecurityManager extends SecurityManager {
       else if (p instanceof PropertyPermission) {
         String target = p.getName();
         String action = p.getActions();
-        if ("write".equals(action)) {
+        if (SecurityConstants.FILE_WRITE_ACTION.equals(action)) {
           if (LOG.isDebugEnabled()) {
             LOG.debug("No write PropertyPermission to " + target);
           }
           throw new SecurityException("No write PropertyPermission to " + target);                  
         }
-        else if ("read".equals(action)) {
+        else if (SecurityConstants.FILE_READ_ACTION.equals(action)) {
           return;
         }
       }
@@ -321,7 +381,7 @@ public class ScriptSecurityManager extends SecurityManager {
       }
       else if (p instanceof SocketPermission) {
         String action = p.getActions();
-        if ("accept".equals(action) || "listen".equals(action)) {
+        if (SecurityConstants.SOCKET_ACCEPT_ACTION.equals(action) || SecurityConstants.SOCKET_LISTEN_ACTION.equals(action)) {
           if (LOG.isDebugEnabled()) {
             LOG.debug("No " + action + " SocketPermission to " + p.getName());
           }

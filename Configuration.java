@@ -125,10 +125,10 @@ public class Configuration {
   private int threadSize = 400;
 
   @StringPart
-  private Map<String, Set> sandboxAllow = new HashMap<String, Set>();
+  private Map<String, Set<String>> sandboxAllow = new HashMap<String, Set<String>>();
 
   @StringPart
-  private Map<String, Set> sandboxForbid = new HashMap<String, Set>();
+  private Map<String, Set<String>> sandboxForbid = new HashMap<String, Set<String>>();
 
   public static Configuration get() {
     if (INSTANCE == null) {
@@ -462,14 +462,14 @@ public class Configuration {
   /**
    * @return the sandboxForbid
    */
-  Map<String, Set> getSandboxForbid() {
+  Map<String, Set<String>> getSandboxForbid() {
     return sandboxForbid;
   }
 
   /**
    * @return the sandboxAllow
    */
-  Map<String, Set> getSandboxAllow() {
+  Map<String, Set<String>> getSandboxAllow() {
     return sandboxAllow;
   }
 }
