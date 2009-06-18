@@ -225,6 +225,27 @@ public class ScriptSecurityManager extends SecurityManager {
    }
     
   @Override
+  public void checkExec(String cmd) {
+    if (isPreconfiguredForbid(SecurityConstants.FILE_EXECUTE_ACTION, cmd)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("No " + SecurityConstants.FILE_EXECUTE_ACTION + " FilePermission to command " + cmd);
+      }
+      throw new SecurityException("No " + SecurityConstants.FILE_EXECUTE_ACTION + " FilePermission to command " + cmd);
+    }
+
+    if (isPreconfiguredAllow(SecurityConstants.FILE_EXECUTE_ACTION, cmd)) {
+      return;
+    }
+    try {
+      super.checkExec(cmd);
+    }
+    catch (SecurityException e) {
+      LOG.error("No " + SecurityConstants.FILE_EXECUTE_ACTION + " FilePermission to command " + cmd);
+      throw e;
+    }
+  }
+
+  @Override
   public void checkPermission(Permission p) {
     checkPermission(p, null);
   }

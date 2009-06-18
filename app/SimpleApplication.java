@@ -45,8 +45,8 @@ public class SimpleApplication extends AbstractApplication implements LocalAppli
   public SimpleApplication(final LocalApplicationManager mgr, final ApplicationURL url, final String type, final int aid, final String appId, 
       final Properties params) throws InvalidApplicationException {
     super(mgr, url, type, aid, appId, params);
-    _baseDir = Utils.getAppDir() + System.getProperty("file.separator") + String.valueOf(getAccountID())
-        + System.getProperty("file.separator");
+    _baseDir = Utils.getAppDir() + System.getProperty("file.separator") + String.valueOf(getAccountID());
+//        + System.getProperty("file.separator");
     setLogContext(null);
 //    _engine = mgr.getScriptEngine(type);
 //    if (_engine == null) {
