@@ -1,6 +1,7 @@
 package com.voxeo.tropo.app;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,6 +48,16 @@ public class SimpleApplication extends AbstractApplication implements LocalAppli
     super(mgr, url, type, aid, appId, params);
     _baseDir = Utils.getAppDir() + System.getProperty("file.separator") + String.valueOf(getAccountID());
 //        + System.getProperty("file.separator");
+    /*
+     * TODO: when to delete this directory ???. Considering in hosting with a
+     * cluster.
+     */
+    File dir = new File(_baseDir);
+    if (!dir.exists()) {
+      if (!dir.mkdirs()) {
+        LOG.error("Erron in creating directory: " + _baseDir);
+      }
+    }
     setLogContext(null);
 //    _engine = mgr.getScriptEngine(type);
 //    if (_engine == null) {
