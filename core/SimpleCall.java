@@ -292,6 +292,34 @@ public class SimpleCall implements CallImpl {
       return null;
     }
   }
+  
+  public void startCallRecording(final String filenameOrUrl, final String format, final String publicKey,
+      final String publicKeyUri) {
+    LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\"" + publicKeyUri + "\")");
+    assertReady("start recording call");
+    final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
+    if (filenameOrUrl != null && filenameOrUrl.length() > 0) {      
+      try {
+        String fNameOrUrl = filenameOrUrl;
+        fNameOrUrl = fNameOrUrl.trim();
+        getASR().startCallRecording(fNameOrUrl, props);
+      }
+      catch (MrcpException e) {
+        handleException(e, "start recording call");
+      }
+    }
+  }
+  
+  public void stopCallRecording() {
+    LOG.info(this + "->stopCallRecording()");
+    assertReady("stop recording call");
+    try {
+      getASR().stopCallRecording(buildCallRecordingProperties(null, null, null));
+    }
+    catch (MrcpException e) {
+      handleException(e, "stop recording call");
+    }
+  }
 
   public Call transfer(final String to, final String from, final boolean answerOnMedia, final int timeout,
       final String ttsOrUrl, final int repeat, final String grammar) {
@@ -675,6 +703,19 @@ public class SimpleCall implements CallImpl {
     return properties;
   }
 
+  protected Properties buildCallRecordingProperties(String format, String publicKey, String publicKeyUri) {
+    Properties props = new Properties();
+    if (format != null) {
+      props.put("Voxeo-Record-Call-Format", format);
+    }
+    if (publicKey != null) {
+      props.put("Voxeo-Record-Call-Public-Key", publicKey);
+    }
+    if (publicKeyUri != null) {
+      props.put("Voxeo-Record-Call-Public-Key-Uri", publicKeyUri);
+    }
+    return props;
+  }
   protected void assertReady(final String action) {
     lock();
     try {
