@@ -62,7 +62,7 @@ public class SimpleIncomingCall extends SimpleCall implements IncomingCall {
         if (time <= 0 && _state != State.ANSWERED) {
           throw new ErrorException("Can not answer within " + timeout + "ms.");
         }
-        assertReady("answer");
+        assertReady("answer", Call.State.ANSWERED);
         LOG.info(this + " is answered.");
       }
       finally {

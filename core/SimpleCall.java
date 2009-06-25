@@ -188,7 +188,7 @@ public class SimpleCall implements CallImpl {
     LOG.info(this + "->prompt(\"" + ttsOrUrl + "\"," + bargein + ",\"" + grammar + "\"," + confidence + "," + mode
         + "," + wait + ")");
     try {
-      assertReady("prompt");
+      assertReady("prompt", Call.State.ANSWERED);
 
       RecognizerRequestHandle handle = null;
       if (grammar != null && grammar.length() > 0) {
@@ -233,7 +233,7 @@ public class SimpleCall implements CallImpl {
     LOG.info(this + "->promptWithRecord(\"" + ttsOrUrl + "\"," + bargein + ",\"" + grammar + "\"," + confidence + ","
         + mode + "," + wait + "," + record + "," + beep + "," + maxtime + "," + finalSilence + ")");
     try {
-      assertReady("prompt and record");
+      assertReady("prompt and record", Call.State.ANSWERED);
 
       final Properties props = buildRecognitionProperties(wait, confidence, mode);
       RequestHandle handle = null;
@@ -296,7 +296,7 @@ public class SimpleCall implements CallImpl {
   public void startCallRecording(final String filenameOrUrl, final String format, final String publicKey,
       final String publicKeyUri) {
     LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\"" + publicKeyUri + "\")");
-    assertReady("start recording call");
+    assertReady("start recording call", Call.State.ANSWERING);
     final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
     if (filenameOrUrl != null && filenameOrUrl.length() > 0) {      
       try {
@@ -312,7 +312,7 @@ public class SimpleCall implements CallImpl {
   
   public void stopCallRecording() {
     LOG.info(this + "->stopCallRecording()");
-    assertReady("stop recording call");
+    assertReady("stop recording call", Call.State.ANSWERING);
     try {
       getASR().stopCallRecording(buildCallRecordingProperties(null, null, null));
     }
@@ -326,7 +326,7 @@ public class SimpleCall implements CallImpl {
     LOG.info(this + "->transfer(" + to + ") [from:" + from + ",timeout:" + timeout + ",ttsOrUrl:" + ttsOrUrl
         + ",grammar:" + grammar + ",repeat:" + repeat + ",answerOnMedia:" + answerOnMedia + "]");
 
-    assertReady("transfer");
+    assertReady("transfer", Call.State.ANSWERED);
 
     MrcpRTCListener listener = null;
     if (grammar != null && grammar.length() > 0) {
@@ -716,10 +716,11 @@ public class SimpleCall implements CallImpl {
     }
     return props;
   }
-  protected void assertReady(final String action) {
+  
+  protected void assertReady(final String action, final State readyState) {
     lock();
     try {
-      if (getState() != Call.State.ANSWERED) {
+      if (getState() != readyState) {
         throw new FatalException(this + " cannot " + action + " when state is " + getState());
       }
     }
