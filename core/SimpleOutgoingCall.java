@@ -38,6 +38,22 @@ public class SimpleOutgoingCall extends SimpleCall implements OutgoingCall {
     init(origReq, answerOnMedia);
   }
   
+  public SimpleOutgoingCall(final SimpleCallFactory callFactory, final SipServletRequest origReq, final SipServletRequest req,
+      final boolean answerOnMedia, ApplicationInstance inst, final String filenameOrUrl) throws IOException, MrcpException {
+    this(callFactory, origReq, req, answerOnMedia, inst);
+    if (filenameOrUrl != null) {
+      startCallRecording(filenameOrUrl, null, null, null);
+    }
+  }
+  
+  public SimpleOutgoingCall(final SimpleCallFactory callFactory, final SipServletRequest origReq, final SipServletRequest req,
+      final boolean answerOnMedia, Application app, final String filenameOrUrl) throws IOException, MrcpException {
+    this(callFactory, origReq, req, answerOnMedia, app);
+    if (filenameOrUrl != null) {
+      startCallRecording(filenameOrUrl, null, null, null);
+    }
+  }
+  
   void init(final SipServletRequest origReq, final boolean answerOnMedia) throws IOException {
     _isAnswerOnMedia = answerOnMedia;
     setState(State.ANSWERING);
