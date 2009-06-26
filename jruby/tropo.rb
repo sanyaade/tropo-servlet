@@ -21,6 +21,9 @@ def call(too, options=nil)
   onError = nil
   onTimeout = nil
   onCallFailure = nil
+  
+  recordUri = ''
+  recordFormat='audio/wav'
 
   if options != nil
     options.key_symbols_to_string!
@@ -34,12 +37,14 @@ def call(too, options=nil)
     answerOnMedia = options['answerOnMedia'] if options['answerOnMedia'] != nil
     callerID = options['callerID'] if options['callerID'] != nil
     callerID = options['callerId'] if options['callerId'] != nil
-  end
+    recordUri = options['recordUri'] if options['recordUri'] != nil
+    recordFormat = options['recordFormat'] if options['recordFormat'] != nil
+  end                                                              
 
   event  = nil
 
   begin
-    _newCall_ = $callFactory.call(callerID, too, answerOnMedia, timeout)
+    _newCall_ = $callFactory.call(callerID, too, answerOnMedia, timeout, recordUri, recordFormat)
     _call_ = Tropo::TropoCall.new(_newCall_)
     if $currentCall == nil
       $currentCall =  _call_ 
@@ -88,6 +93,14 @@ end
 
 def answer(timeout=30) # in second
   $currentCall.answer(timeout) if $currentCall
+end
+       
+def startCallRecording (uri, format, key, keyUri) {
+  $currentCall.startCallRecording(uri, format, key,keyUri) if $currentCall
+end
+
+def stopCallRecording () {
+  $currentCall.stopCallRecording() if $currentCall
 end
 
 def redirect(too)

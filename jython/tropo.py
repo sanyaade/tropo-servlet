@@ -103,11 +103,15 @@ class TropoCall :
     
   def answer (self, timeout=30) : # in second
     self._call.answer(timeout*1000)
-  
+
+  def startCallRecording (self, uri, format='audio/wav', key=None, keyUri=None):
+    self._call_.startCallRecording(uri, format, key, keyUri)
+
+  def stopCallRecording (self):
+    self._call_.stopCallRecording()
   
   def reject (self) :
     self._call.reject()
-  
   
   def hangup (self) :
     return self._call.hangup()
@@ -354,7 +358,10 @@ def call(too, options=None):
     onAnswer =  None
     onError = None
     onTimeout = None
-    onCallFailure = None
+    onCallFailure = None      
+
+    recordUri = ''
+    recordFormat='audio/wav'
 
     if options != None: 
         if "onAnswer" in options:
@@ -377,11 +384,15 @@ def call(too, options=None):
         if "callerId" in options: 
             callerID = options['callerId']
 
+        if "recordUri" in options: 
+            recordUri = options['recordUri']
+        if "recordFormat" in options: 
+            recordFormat = options['recordFormat']
     event  = None
     global currentCall
 
     try:
-        _newCall_ = callFactory.call(callerID, too, answerOnMedia, timeout)
+        _newCall_ = callFactory.call(callerID, too, answerOnMedia, timeout, recordUri, recordFormat)
         _call_ = TropoCall(_newCall_)
         if currentCall == None :
             currentCall =  _call_ 
@@ -426,6 +437,14 @@ def redirect(too):
 def answer(timeout=30): # in second
    if currentCall != None: 
      currentCall.answer(timeout)
+
+def startCallRecording (uri, format, key, keyUri):
+   if currentCall != None: 
+     currentCall.startCallRecording(uri, format, key, keyUri)
+
+def stopCallRecording ():
+   if currentCall != None: 
+     currentCall.stopCallRecording()
 
 def reject() :
   currentCall.reject()

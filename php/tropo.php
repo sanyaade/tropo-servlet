@@ -154,6 +154,14 @@ class TropoCall {
         $this->_call_->answer($timeout * 1000);
     }  // function answer
     
+    function startCallRecording ($uri, $format="audio/wav", $key=null, $keyUri=null) {
+        $this->_call_->startCallRecording($uri, $format, $key, $keyUri);
+    }
+
+    function stopCallRecording () {
+        $this->_call_->stopCallRecording();
+    }
+
     function reject() {
         $this->_call_->reject();
     }  // function reject
@@ -476,6 +484,9 @@ function call($too, $options){
     $onTimeout     = null;
     $onCallFailure = null;
 
+    $recordUri = '';
+    $recordFormat='audio/wav';
+
     if ($options) {
         $onAnswer      = $options['onAnswer'];
         $onError       = $options['onError'];
@@ -496,13 +507,19 @@ function call($too, $options){
         if($options['callerId'] != null){
             $callerID = $options['callerId'];
         } 
+        if($options['recordUri'] != null){
+            $recordUri = $options['recordUri'];
+        } 
+        if($options['recordFormat'] != null){
+            $recordFormat = $options['recordFormat'];
+        } 
     }  // if $options
 
     $___event___  = null;
 
     try {
         //???  what is callFactory?  it's in all the shims
-        $_newCall_ = $callFactory->call($callerID, $too, $answerOnMedia, $timeout);
+        $_newCall_ = $callFactory->call($callerID, $too, $answerOnMedia, $timeout, $recordUri, $recordFormat);
         $_call_ = new TropoCall($_newCall_);
         
         if ($currentCall == null) {
@@ -574,6 +591,22 @@ function answer($timeout=30) { // in second
     $currentCall->answer($timeout);
   }
 }  // function answer
+                    
+function startCallRecording ($uri, $format, $key, $keyUri) {       
+  GLOBAL $currentCall;
+
+  if ($currentCall!=null) {
+    $currentCall->startCallRecording($uri, $format, $key, $keyUri);
+  }    
+}  // function startCallRecording
+                    
+function stopCallRecording () {       
+  GLOBAL $currentCall;
+
+  if ($currentCall!=null) {
+    $currentCall->stopCallRecording();
+  }    
+}  // function stopCallRecording
 
 function reject() {
   GLOBAL $currentCall;

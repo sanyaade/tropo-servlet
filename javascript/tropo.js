@@ -266,6 +266,17 @@ TropoCall.prototype.answer = function (timeout) { //in second
   this._call_.answer(timeout*1000);
 }
 
+TropoCall.prototype.startCallRecording = function (uri, format, key, keyUri) {
+  if (!format || format == null) {
+    format = 'audio/wav';
+  }
+  this._call_.startCallRecording(uri, format, key, keyUri);
+}
+
+TropoCall.prototype.stopCallRecording = function () {
+  this._call_.stopCallRecording();
+}
+
 TropoCall.prototype.reject = function () {
   this._call_.reject();
   //document.writeln("reject() <br>");
@@ -557,6 +568,9 @@ function call(too, options){
     var onError = null
     var onTimeout = null
     var onCallFailure = null
+	
+	var recordUri = '';
+	var recordFormat='audio/wav';
 
     if (options) {
         onAnswer = options['onAnswer']
@@ -577,12 +591,18 @@ function call(too, options){
         if(options['callerId'] != null){
             callerID = options['callerId']
         } 
+        if(options['recordUri'] != null){
+            recordUri = options['recordUri']
+        } 
+        if(options['recordFormat'] != null){
+            recordFormat = options['recordFormat']
+        } 
     }
 
     var event  = null
 
     try{
-        var _newCall_ = callFactory.call(callerID, too, answerOnMedia, timeout)
+        var _newCall_ = callFactory.call(callerID, too, answerOnMedia, timeout,recordUri,recordFormat)
         var _call_ = new TropoCall(_newCall_);
         if(currentCall == null){
             currentCall = _call_;
@@ -645,6 +665,18 @@ function redirect(too) {
 function answer(timeout) {
   if(currentCall!=null){
     currentCall.answer(timeout);
+  }
+}
+
+function startCallRecording(uri, format, key, keyUri) {
+  if(currentCall!=null){
+    currentCall.startCallRecording(uri, format, key, keyUri);
+  }
+}
+
+function stopCallRecording() {
+  if(currentCall!=null){
+    currentCall.stopCallRecording();
   }
 }
 

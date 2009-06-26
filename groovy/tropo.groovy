@@ -142,6 +142,14 @@ public class TropoCall {
     _call.answer(timeout*1000)
   }
   
+  def startCallRecording (uri, format='audio/wav', key=null, keyUri=null) {
+    _call_.startCallRecording(uri, format, key, keyUri)
+  }
+  
+  def stopCallRecording () {
+    _call_.stopCallRecording()
+  }
+  
   def reject () {
     _call.reject()
   }
@@ -433,6 +441,9 @@ def call(too, options=null){
   def onTimeout = null
   def onCallFailure = null
   
+  def recordUri = ''
+  def recordFormat='audio/wav'
+  
   if (options) {
     onAnswer = options['onAnswer']
     onError = options['onError']
@@ -452,12 +463,18 @@ def call(too, options=null){
     if(options['callerId'] != null){
       callerID = options['callerId']
     } 
+    if(options['recordUri'] != null){
+      recordUri = options['recordUri']
+    } 
+    if(options['recordFormat'] != null){
+      recordFormat = options['recordFormat']
+    } 
   }
   
   def event  = null
   
   try{
-    def _newCall_=callFactory.call(callerID, too, answerOnMedia, timeout)
+    def _newCall_=callFactory.call(callerID, too, answerOnMedia, timeout, recordUri, recordFormat)
     def _call_ = new TropoCall(_newCall_)
     if ( currentCall == null ){
       currentCall =  _call_ 
@@ -518,6 +535,18 @@ def redirect(too) {
 def answer(timeout=30) { // in second
   if(currentCall != null){
     currentCall.answer(timeout);
+  }
+}
+
+def startCallRecording (uri, format, key, keyUri) {
+  if(currentCall != null){
+    currentCall.startCallRecording(uri, format, key,keyUri);
+  }
+}
+
+def stopCallRecording () {
+  if(currentCall != null){
+    currentCall.stopCallRecording();
   }
 }
 
