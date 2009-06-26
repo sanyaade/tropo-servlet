@@ -39,12 +39,12 @@ public class SimpleCallFactory implements CallFactory {
     _app = app;
   }
 
-  public SimpleOutgoingCall call(final String from, final String to, final boolean answerOnMedia, final int timeout) {
-    return call(null, from, to, answerOnMedia, timeout, null);
+  public SimpleOutgoingCall call(final String from, final String to, final boolean answerOnMedia, final int timeout, final String callRecordUri, final String callRecordFormat) {
+    return call(null, from, to, answerOnMedia, timeout, null, callRecordUri, callRecordFormat);
   }
 
   public SimpleOutgoingCall call(final SipServletRequest origReq, final String from, final String to,
-      final boolean answerOnMedia, final int timeout, final MrcpRTCListener listener) {
+      final boolean answerOnMedia, final int timeout, final MrcpRTCListener listener, final String callRecordUri, final String callRecordFormat) {
     final SimpleOutgoingCall call;
     String caller = Utils.processFrom(from, origReq == null ? null : origReq.getLocalAddr());
     if ((caller == null || caller.length() == 0) && origReq != null) {
@@ -56,11 +56,11 @@ public class SimpleCallFactory implements CallFactory {
       final SipServletRequest req = _sipFactory.createRequest(_session, "INVITE", caller, callee);
       if (_inst != null) {
         call = new SimpleOutgoingCall(this, origReq == null ? null : origReq, req,
-            answerOnMedia, _inst);
+            answerOnMedia, _inst, callRecordUri, callRecordFormat);
       }
       else {
         call = new SimpleOutgoingCall(this, origReq == null ? null : origReq, req,
-            answerOnMedia, _app);        
+            answerOnMedia, _app, callRecordUri, callRecordFormat);        
       }
       if (listener != null) {
         if (!listener.isStarted()) {

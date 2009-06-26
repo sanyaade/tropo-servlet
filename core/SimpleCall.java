@@ -292,7 +292,9 @@ public class SimpleCall implements CallImpl {
       return null;
     }
   }
-  
+  /**
+   * format: audio/wav, audio/gsm, audio/au
+   */
   public void startCallRecording(final String filenameOrUrl, final String format, final String publicKey,
       final String publicKeyUri) {
     LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\"" + publicKeyUri + "\")");
@@ -342,7 +344,7 @@ public class SimpleCall implements CallImpl {
 
     final SimpleCall call;
     try {
-      call = _callFactory.call(_invite, from, to, answerOnMedia, timeout, listener);
+      call = _callFactory.call(_invite, from, to, answerOnMedia, timeout, listener, null, null);
     }
     catch (final RuntimeException t) {
       LOG.error("Error creating outgoing call to " + this + " : " + t.getMessage(), t);
@@ -705,13 +707,13 @@ public class SimpleCall implements CallImpl {
 
   protected Properties buildCallRecordingProperties(String format, String publicKey, String publicKeyUri) {
     Properties props = new Properties();
-    if (format != null) {
+    if (format != null && format.length() > 0) {
       props.put("Voxeo-Record-Call-Format", format);
     }
-    if (publicKey != null) {
+    if (publicKey != null && publicKey.length() > 0) {
       props.put("Voxeo-Record-Call-Public-Key", publicKey);
     }
-    if (publicKeyUri != null) {
+    if (publicKeyUri != null && publicKeyUri.length() > 0) {
       props.put("Voxeo-Record-Call-Public-Key-Uri", publicKeyUri);
     }
     return props;

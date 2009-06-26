@@ -10,11 +10,11 @@ import javax.servlet.sip.ar.SipApplicationRoutingDirective;
 import org.apache.log4j.Logger;
 
 import com.mot.mrcp.MrcpException;
+import com.voxeo.sipmethod.mrcp.client.Endpoint;
 import com.voxeo.tropo.Configuration;
 import com.voxeo.tropo.ServletContextConstants;
 import com.voxeo.tropo.app.Application;
 import com.voxeo.tropo.app.ApplicationInstance;
-import com.voxeo.sipmethod.mrcp.client.Endpoint;
 
 public class SimpleOutgoingCall extends SimpleCall implements OutgoingCall {
 
@@ -27,34 +27,18 @@ public class SimpleOutgoingCall extends SimpleCall implements OutgoingCall {
   protected SipServletRequest _origReq = null;
 
   public SimpleOutgoingCall(final SimpleCallFactory callFactory, final SipServletRequest origReq, final SipServletRequest req,
-      final boolean answerOnMedia, ApplicationInstance inst) throws IOException, MrcpException {
+      final boolean answerOnMedia, ApplicationInstance inst, final String callRecordUri, final String callRecordFormat) throws IOException, MrcpException {
     super(callFactory, req, inst);
-    init(origReq, answerOnMedia);
+    init(origReq, answerOnMedia, callRecordUri, callRecordFormat);
   }
   
   public SimpleOutgoingCall(final SimpleCallFactory callFactory, final SipServletRequest origReq, final SipServletRequest req,
-      final boolean answerOnMedia, Application app) throws IOException, MrcpException {
+      final boolean answerOnMedia, Application app, final String callRecordUri, final String callRecordFormat) throws IOException, MrcpException {
     super(callFactory, req, app);
-    init(origReq, answerOnMedia);
+    init(origReq, answerOnMedia, callRecordUri, callRecordFormat);
   }
   
-  public SimpleOutgoingCall(final SimpleCallFactory callFactory, final SipServletRequest origReq, final SipServletRequest req,
-      final boolean answerOnMedia, ApplicationInstance inst, final String filenameOrUrl) throws IOException, MrcpException {
-    this(callFactory, origReq, req, answerOnMedia, inst);
-    if (filenameOrUrl != null) {
-      startCallRecording(filenameOrUrl, null, null, null);
-    }
-  }
-  
-  public SimpleOutgoingCall(final SimpleCallFactory callFactory, final SipServletRequest origReq, final SipServletRequest req,
-      final boolean answerOnMedia, Application app, final String filenameOrUrl) throws IOException, MrcpException {
-    this(callFactory, origReq, req, answerOnMedia, app);
-    if (filenameOrUrl != null) {
-      startCallRecording(filenameOrUrl, null, null, null);
-    }
-  }
-  
-  void init(final SipServletRequest origReq, final boolean answerOnMedia) throws IOException {
+  void init(final SipServletRequest origReq, final boolean answerOnMedia, String callRecordUri, String callRecordFormat) throws IOException {
     _isAnswerOnMedia = answerOnMedia;
     setState(State.ANSWERING);
     final URI to = _invite.getTo().getURI();
@@ -74,6 +58,9 @@ public class SimpleOutgoingCall extends SimpleCall implements OutgoingCall {
     _origReq = origReq;
     _invite.setContent(_mrcpSDP, ServletContextConstants.CONTENT_TYPE_SDP);
     _invite.setRoutingDirective(SipApplicationRoutingDirective.CONTINUE, _origReq == null ? null : _origReq);
+    if (callRecordUri != null && callRecordUri.length() > 0) {
+      startCallRecording(callRecordUri, callRecordFormat, null, null);
+    }
     LOG.info(this + " will be called.");    
   }
   
