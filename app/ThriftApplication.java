@@ -168,7 +168,42 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     }
     return call;
   }
-  
+
+  void startCallRecording(String id, String filenameOrUrl, String format, String publicKey, String publicKeyUri)
+      throws TropoException, SystemException {
+    setLogContext(null);
+    Call call = getCall(id);
+    try {
+      ((IncomingCall) call).startCallRecording(filenameOrUrl, format, publicKey, publicKeyUri);
+    }
+    catch (ClassCastException e) {
+      throw new TropoException(call + " can not be startCallRecording.");
+    }
+    catch (ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch (FatalException e) {
+      throw new SystemException(e.toString());
+    }
+  }
+
+  void stopCallRecording(String id) throws TropoException, SystemException {
+    setLogContext(null);
+    Call call = getCall(id);
+    try {
+      ((IncomingCall) call).stopCallRecording();
+    }
+    catch (ClassCastException e) {
+      throw new TropoException(call + " can not be stopCallRecording.");
+    }
+    catch (ErrorException e) {
+      throw new TropoException(e.toString());
+    }
+    catch (FatalException e) {
+      throw new SystemException(e.toString());
+    }
+  }
+
   void answer(String id, int timeout) throws TropoException, SystemException {
     setLogContext(null);
     Call call = getCall(id);
@@ -297,12 +332,12 @@ public class ThriftApplication extends AbstractApplication implements RemoteAppl
     }            
   }
   
-  CallImpl call(String from, String to, boolean answerOnMedia, int timeout) throws TropoException, SystemException {
+  CallImpl call(String from, String to, boolean answerOnMedia, int timeout, String recordUri, String recordFormat) throws TropoException, SystemException {
     setLogContext(null);
     SipApplicationSession appSession = getSipFactory().createApplicationSession();
     SimpleCallFactory factory = new SimpleCallFactory(this, appSession);
     appSession.setAttribute(CALL_FACTORY, factory);
-    CallImpl call = factory.call(from, to, answerOnMedia, timeout);
+    CallImpl call = factory.call(from, to, answerOnMedia, timeout, recordUri, recordFormat);
     _calls.put(call.getId(), call);
     return call;
   }

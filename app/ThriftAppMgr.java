@@ -195,6 +195,28 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
   }
   
+  public void startCallRecording(String key, String id, String recordUri, String recordFormat)
+      throws AuthenticationException, TropoException, SystemException, TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      ((ThriftApplication) app).startCallRecording(id, recordUri, recordFormat, null, null);
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
+  }
+
+  public void stopCallRecording(String key, String id) throws AuthenticationException, TropoException, SystemException,
+      TException {
+    RemoteApplication app = _index.get(key);
+    if (app != null && app instanceof ThriftApplication) {
+      ((ThriftApplication) app).stopCallRecording(id);
+    }
+    else {
+      throw new AuthenticationException("Invalid key: " + key);
+    }
+  }
+  
   protected void authenticate(BindStruct bind) throws AuthenticationException, SystemException {
     if (bind.getAccountId() <= 0 || StringUtils.isEmpty(bind.getApplicationId())) {
       throw new SystemException("Invalid account or application.");
@@ -412,10 +434,15 @@ public class ThriftAppMgr extends AbstractRemoteApplicationManager implements Ru
     }
   }
 
-  public AlertStruct call(String key, String from, String to, boolean answerOnMedia, int timeout) throws AuthenticationException, TropoException, SystemException, TException {
+  public AlertStruct call(String key, String from, String to, boolean answerOnMedia, int timeout)
+      throws AuthenticationException, TropoException, SystemException, TException {
+    return call_with_recording(key, from, to, answerOnMedia, timeout, null, null);
+  }
+
+  public AlertStruct call_with_recording(String key, String from, String to, boolean answerOnMedia, int timeout, String recordUri, String recordFormat) throws AuthenticationException, TropoException, SystemException, TException {
     RemoteApplication app = _index.get(key);
     if (app != null && app instanceof ThriftApplication) {
-      CallImpl call = ((ThriftApplication)app).call(from, to, answerOnMedia, timeout);
+      CallImpl call = ((ThriftApplication)app).call(from, to, answerOnMedia, timeout, recordUri, recordFormat);
       return new AlertStruct(call.getId(), app.getApplicationID(), call.getCallerId(), call.getCallerName(), call.getCalledId(), call.getCalledName());
     }
     else {
