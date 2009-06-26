@@ -105,10 +105,10 @@ class TropoCall :
     self._call.answer(timeout*1000)
 
   def startCallRecording (self, uri, format='audio/wav', key=None, keyUri=None):
-    self._call_.startCallRecording(uri, format, key, keyUri)
+    self._call.startCallRecording(uri, format, key, keyUri)
 
   def stopCallRecording (self):
-    self._call_.stopCallRecording()
+    self._call.stopCallRecording()
   
   def reject (self) :
     self._call.reject()

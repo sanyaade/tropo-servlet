@@ -111,12 +111,12 @@ module Tropo
     end
 
     def startCallRecording (uri, format='audio/wav', key=nil, keyUri=nil)
-      call_.startCallRecording(uri, format, key, keyUri)
+      call.startCallRecording(uri, format, key, keyUri)
     end
         
 
     def stopCallRecording ()
-      call_.stopCallRecording()
+      call.stopCallRecording()
     end
         
     def state()

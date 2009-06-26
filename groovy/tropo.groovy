@@ -143,11 +143,11 @@ public class TropoCall {
   }
   
   def startCallRecording (uri, format='audio/wav', key=null, keyUri=null) {
-    _call_.startCallRecording(uri, format, key, keyUri)
+    _call.startCallRecording(uri, format, key, keyUri)
   }
   
   def stopCallRecording () {
-    _call_.stopCallRecording()
+    _call.stopCallRecording()
   }
   
   def reject () {
