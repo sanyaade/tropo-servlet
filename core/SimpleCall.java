@@ -298,16 +298,11 @@ public class SimpleCall implements CallImpl {
   public void startCallRecording(final String filenameOrUrl, final String format, final String publicKey,
       final String publicKeyUri) {
     LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\"" + publicKeyUri + "\")");
-    if (_state != State.ANSWERED && _state != State.ANSWERING) {
-      LOG.error(this + "can not be rejected in " + _state + " state.");
-      throw new ErrorException("Expected Answered or Answering state, but is " + _state);
-    }
-    if (filenameOrUrl != null && filenameOrUrl.length() > 0) {      
+    assertReady("startCallRecording", State.ANSWERED);
+    if (filenameOrUrl != null && filenameOrUrl.length() > 0) {
       final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
       try {
-        String fNameOrUrl = filenameOrUrl;
-        fNameOrUrl = fNameOrUrl.trim();
-        getASR().startCallRecording(fNameOrUrl, props);
+        getASR().startCallRecording(filenameOrUrl.trim(), props);
       }
       catch (MrcpException e) {
         handleException(e, "start recording call");

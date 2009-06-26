@@ -56,11 +56,11 @@ public class SimpleCallFactory implements CallFactory {
       final SipServletRequest req = _sipFactory.createRequest(_session, "INVITE", caller, callee);
       if (_inst != null) {
         call = new SimpleOutgoingCall(this, origReq == null ? null : origReq, req,
-            answerOnMedia, _inst, callRecordUri, callRecordFormat);
+            answerOnMedia, _inst);
       }
       else {
         call = new SimpleOutgoingCall(this, origReq == null ? null : origReq, req,
-            answerOnMedia, _app, callRecordUri, callRecordFormat);        
+            answerOnMedia, _app);        
       }
       if (listener != null) {
         if (!listener.isStarted()) {
@@ -98,6 +98,9 @@ public class SimpleCallFactory implements CallFactory {
           throw new ErrorException("Outbound call can not complete.");
         }
         LOG.info(call + " is answered.");
+        if (callRecordUri != null && callRecordUri.length() > 0) {
+          call.startCallRecording(callRecordUri, callRecordFormat, null, null);
+        }
       }
       finally {
         call.unlock();
