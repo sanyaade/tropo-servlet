@@ -104,7 +104,7 @@ class TropoCall :
   def answer (self, timeout=30) : # in second
     self._call.answer(timeout*1000)
 
-  def startCallRecording (self, uri, format='audio/wav', key=None, keyUri=None):
+  def startCallRecording (self, uri, format='audio/wav', key='', keyUri=''):
     self._call.startCallRecording(uri, format, key, keyUri)
 
   def stopCallRecording (self):
@@ -438,7 +438,7 @@ def answer(timeout=30): # in second
    if currentCall != None: 
      currentCall.answer(timeout)
 
-def startCallRecording (uri, format, key, keyUri):
+def startCallRecording (uri, format='audio/wav', key='', keyUri=''):
    if currentCall != None: 
      currentCall.startCallRecording(uri, format, key, keyUri)
 

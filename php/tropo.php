@@ -154,7 +154,7 @@ class TropoCall {
         $this->_call_->answer($timeout * 1000);
     }  // function answer
     
-    function startCallRecording ($uri, $format="audio/wav", $key=null, $keyUri=null) {
+    function startCallRecording ($uri, $format="audio/wav", $key='', $keyUri='') {
         $this->_call_->startCallRecording($uri, $format, $key, $keyUri);
     }
 
@@ -592,7 +592,7 @@ function answer($timeout=30) { // in second
   }
 }  // function answer
                     
-function startCallRecording ($uri, $format, $key, $keyUri) {       
+function startCallRecording ($uri, $format="audio/wav", $key='', $keyUri='') {       
   GLOBAL $currentCall;
 
   if ($currentCall!=null) {

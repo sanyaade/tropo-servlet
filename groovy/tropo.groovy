@@ -142,7 +142,7 @@ public class TropoCall {
     _call.answer(timeout*1000)
   }
   
-  def startCallRecording (uri, format='audio/wav', key=null, keyUri=null) {
+  def startCallRecording (uri, format='audio/wav', key='', keyUri='') {
     _call.startCallRecording(uri, format, key, keyUri)
   }
   
@@ -538,7 +538,7 @@ def answer(timeout=30) { // in second
   }
 }
 
-def startCallRecording (uri, format, key, keyUri) {
+def startCallRecording (uri, format='audio/wav', key='', keyUri='') {
   if(currentCall != null){
     currentCall.startCallRecording(uri, format, key,keyUri);
   }

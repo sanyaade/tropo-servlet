@@ -102,8 +102,8 @@ public class SimpleIncomingCall extends SimpleCall implements IncomingCall {
         ;
       }
       else {
-        LOG.error(this + "can not be rejected in " + _state + " state.");
-        throw new ErrorException("Expected Ringing or Answering state: " + _state);
+        LOG.error(this + " can not be rejected in " + _state + " state.");
+        throw new ErrorException(this + " can not be rejected in " + _state + " state.");
       }
     }
     catch (final Throwable t) {

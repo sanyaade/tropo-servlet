@@ -95,7 +95,7 @@ def answer(timeout=30) # in second
   $currentCall.answer(timeout) if $currentCall
 end
        
-def startCallRecording (uri, format, key, keyUri) {
+def startCallRecording (uri, format='audio/wav', key='', keyUri='') {
   $currentCall.startCallRecording(uri, format, key,keyUri) if $currentCall
 end
 

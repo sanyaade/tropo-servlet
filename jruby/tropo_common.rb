@@ -110,7 +110,7 @@ module Tropo
       call.block(milliSeconds)
     end
 
-    def startCallRecording (uri, format='audio/wav', key=nil, keyUri=nil)
+    def startCallRecording (uri, format='audio/wav', key='', keyUri='')
       call.startCallRecording(uri, format, key, keyUri)
     end
         

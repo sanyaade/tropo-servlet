@@ -270,6 +270,12 @@ TropoCall.prototype.startCallRecording = function (uri, format, key, keyUri) {
   if (!format || format == null) {
     format = 'audio/wav';
   }
+  if (!key || key == null) {
+    key = '';
+  }
+  if (!keyUri || keyUri == null) {
+    keyUri = '';
+  }
   this._call_.startCallRecording(uri, format, key, keyUri);
 }
 
@@ -670,6 +676,15 @@ function answer(timeout) {
 
 function startCallRecording(uri, format, key, keyUri) {
   if(currentCall!=null){
+    if (!format || format == null) {
+      format = 'audio/wav';
+    }
+    if (!key || key == null) {
+      key = '';
+    }
+    if (!keyUri || keyUri == null) {
+      keyUri = '';
+    }
     currentCall.startCallRecording(uri, format, key, keyUri);
   }
 }
