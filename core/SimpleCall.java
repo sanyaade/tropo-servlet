@@ -299,8 +299,8 @@ public class SimpleCall implements CallImpl {
       final String publicKeyUri) {
     LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\"" + publicKeyUri + "\")");
     assertReady("start recording call", Call.State.ANSWERING);
-    final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
     if (filenameOrUrl != null && filenameOrUrl.length() > 0) {      
+      final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
       try {
         String fNameOrUrl = filenameOrUrl;
         fNameOrUrl = fNameOrUrl.trim();
