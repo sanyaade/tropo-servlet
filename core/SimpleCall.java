@@ -193,7 +193,7 @@ public class SimpleCall implements CallImpl {
       RecognizerRequestHandle handle = null;
       if (grammar != null && grammar.length() > 0) {
         handle = getASR().startRecognize(GrammarFactory.createGrammar(grammar),
-            buildRecognitionProperties(wait, confidence, mode));
+            buildRecognitionProperties(wait, confidence, mode, false, null, null));
       }
 
       if (ttsOrUrl != null && ttsOrUrl.length() > 0) {
@@ -207,7 +207,8 @@ public class SimpleCall implements CallImpl {
         return retval;
       }
 
-      final MrcpAsrResult result = handle.waitForResult(buildRecognitionProperties(wait, confidence, mode), wait);
+      final MrcpAsrResult result = handle.waitForResult(buildRecognitionProperties(wait, confidence, mode, false, null,
+          null), wait);
       if (result.getType() == MrcpAsrResult.Type.SUCCESS) {
         final Map<String, String> retval = getReturnValue(result);
         if (LOG.isDebugEnabled()) {
@@ -229,23 +230,25 @@ public class SimpleCall implements CallImpl {
   // just for test
   public Map<String, String> promptWithRecord(final String ttsOrUrl, final boolean bargein, final String grammar,
       final String confidence, final String mode, final int wait, final boolean record, final boolean beep,
-      final int maxtime, final int finalSilence) {
+      final int maxtime, final int finalSilence, final String recordUri, final String mediaType,
+      final String recordUriMethod) {
     LOG.info(this + "->promptWithRecord(\"" + ttsOrUrl + "\"," + bargein + ",\"" + grammar + "\"," + confidence + ","
-        + mode + "," + wait + "," + record + "," + beep + "," + maxtime + "," + finalSilence + ")");
+        + mode + "," + wait + "," + record + "," + beep + "," + maxtime + "," + finalSilence + "," + recordUri + ","
+        + mediaType + "," + recordUriMethod + ")");
     try {
       assertReady("prompt and record", Call.State.ANSWERED);
 
-      final Properties props = buildRecognitionProperties(wait, confidence, mode);
+      final Properties props = buildRecognitionProperties(wait, confidence, mode, record, recordUri, recordUriMethod);
       RequestHandle handle = null;
       if (grammar == null || grammar.length() == 0) {
         if (record) {
-          handle = getASR().startRecord(null, props, maxtime, finalSilence);
+          handle = getASR().startRecord(null, props, maxtime, finalSilence, mediaType);
         }
       }
       else {
         final Grammar g = GrammarFactory.createGrammar(grammar);
         if (record) {
-          handle = getASR().startRecord(g, props, maxtime, finalSilence);
+          handle = getASR().startRecord(g, props, maxtime, finalSilence, mediaType);
         }
         else {
           handle = getASR().startRecognize(g, props);
@@ -292,12 +295,14 @@ public class SimpleCall implements CallImpl {
       return null;
     }
   }
+
   /**
    * format: audio/wav, audio/gsm, audio/au
    */
   public void startCallRecording(final String filenameOrUrl, final String format, final String publicKey,
       final String publicKeyUri) {
-    LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\"" + publicKeyUri + "\")");
+    LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\""
+        + publicKeyUri + "\")");
     assertReady("startCallRecording", State.ANSWERED);
     if (filenameOrUrl != null && filenameOrUrl.length() > 0) {
       final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
@@ -309,10 +314,10 @@ public class SimpleCall implements CallImpl {
       }
     }
   }
-  
+
   public void stopCallRecording() {
     LOG.info(this + "->stopCallRecording()");
-    //assertReady("stop recording call", Call.State.ANSWERING);
+    // assertReady("stop recording call", Call.State.ANSWERING);
     try {
       getASR().stopCallRecording(buildCallRecordingProperties(null, null, null));
     }
@@ -663,7 +668,8 @@ public class SimpleCall implements CallImpl {
   }
 
   // need call scope configuration instead of servlet scope configuration.
-  protected Properties buildRecognitionProperties(final int timeout, final String confidence, final String mode) {
+  protected Properties buildRecognitionProperties(final int timeout, final String confidence, final String mode,
+      final boolean record, final String recordUri, final String recordUriMethod) {
     final Properties properties = new Properties();
     properties.setProperty("recognizer-start-timers", Boolean.toString(false));
     properties.setProperty("dtmf-term-timeout", Configuration.get().getTermTimeout());
@@ -687,6 +693,14 @@ public class SimpleCall implements CallImpl {
     }
     else {
       properties.setProperty("Voxeo-Input-Mode", "dtmf voice");
+    }
+    if (record) {
+      if (recordUri != null) {
+        properties.setProperty("Record-Uri", recordUri);
+      }
+      if (recordUriMethod != null) {
+        properties.setProperty("Voxeo-Record-Uri-Method", recordUriMethod);
+      }
     }
     return properties;
   }
@@ -716,7 +730,7 @@ public class SimpleCall implements CallImpl {
     }
     return props;
   }
-  
+
   protected void assertReady(final String action, final State readyState) {
     lock();
     try {
