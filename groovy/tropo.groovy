@@ -441,7 +441,7 @@ def call(too, options=null){
   def onTimeout = null
   def onCallFailure = null
   
-  def recordUri = ''
+  def recordURI = ''
   def recordFormat='audio/wav'
   
   if (options) {
@@ -463,8 +463,8 @@ def call(too, options=null){
     if(options['callerId'] != null){
       callerID = options['callerId']
     } 
-    if(options['recordUri'] != null){
-      recordUri = options['recordUri']
+    if(options['recordURI'] != null){
+      recordURI = options['recordURI']
     } 
     if(options['recordFormat'] != null){
       recordFormat = options['recordFormat']
@@ -474,7 +474,7 @@ def call(too, options=null){
   def event  = null
   
   try{
-    def _newCall_=callFactory.call(callerID, too, answerOnMedia, timeout, recordUri, recordFormat)
+    def _newCall_=callFactory.call(callerID, too, answerOnMedia, timeout, recordURI, recordFormat)
     def _call_ = new TropoCall(_newCall_)
     if ( currentCall == null ){
       currentCall =  _call_ 

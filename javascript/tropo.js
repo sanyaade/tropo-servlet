@@ -575,7 +575,7 @@ function call(too, options){
     var onTimeout = null
     var onCallFailure = null
 	
-	var recordUri = '';
+	var recordURI = '';
 	var recordFormat='audio/wav';
 
     if (options) {
@@ -597,8 +597,8 @@ function call(too, options){
         if(options['callerId'] != null){
             callerID = options['callerId']
         } 
-        if(options['recordUri'] != null){
-            recordUri = options['recordUri']
+        if(options['recordURI'] != null){
+            recordURI = options['recordURI']
         } 
         if(options['recordFormat'] != null){
             recordFormat = options['recordFormat']
@@ -608,7 +608,7 @@ function call(too, options){
     var event  = null
 
     try{
-        var _newCall_ = callFactory.call(callerID, too, answerOnMedia, timeout,recordUri,recordFormat)
+        var _newCall_ = callFactory.call(callerID, too, answerOnMedia, timeout,recordURI,recordFormat)
         var _call_ = new TropoCall(_newCall_);
         if(currentCall == null){
             currentCall = _call_;

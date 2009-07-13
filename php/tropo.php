@@ -484,7 +484,7 @@ function call($too, $options){
     $onTimeout     = null;
     $onCallFailure = null;
 
-    $recordUri = '';
+    $recordURI = '';
     $recordFormat='audio/wav';
 
     if ($options) {
@@ -507,8 +507,8 @@ function call($too, $options){
         if($options['callerId'] != null){
             $callerID = $options['callerId'];
         } 
-        if($options['recordUri'] != null){
-            $recordUri = $options['recordUri'];
+        if($options['recordURI'] != null){
+            $recordURI = $options['recordURI'];
         } 
         if($options['recordFormat'] != null){
             $recordFormat = $options['recordFormat'];
@@ -519,7 +519,7 @@ function call($too, $options){
 
     try {
         //???  what is callFactory?  it's in all the shims
-        $_newCall_ = $callFactory->call($callerID, $too, $answerOnMedia, $timeout, $recordUri, $recordFormat);
+        $_newCall_ = $callFactory->call($callerID, $too, $answerOnMedia, $timeout, $recordURI, $recordFormat);
         $_call_ = new TropoCall($_newCall_);
         
         if ($currentCall == null) {

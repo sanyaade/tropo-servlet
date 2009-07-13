@@ -22,7 +22,7 @@ def call(too, options=nil)
   onTimeout = nil
   onCallFailure = nil
   
-  recordUri = ''
+  recordURI = ''
   recordFormat='audio/wav'
 
   if options != nil
@@ -37,14 +37,14 @@ def call(too, options=nil)
     answerOnMedia = options['answerOnMedia'] if options['answerOnMedia'] != nil
     callerID = options['callerID'] if options['callerID'] != nil
     callerID = options['callerId'] if options['callerId'] != nil
-    recordUri = options['recordUri'] if options['recordUri'] != nil
+    recordURI = options['recordURI'] if options['recordURI'] != nil
     recordFormat = options['recordFormat'] if options['recordFormat'] != nil
   end                                                              
 
   event  = nil
 
   begin
-    _newCall_ = $callFactory.call(callerID, too, answerOnMedia, timeout, recordUri, recordFormat)
+    _newCall_ = $callFactory.call(callerID, too, answerOnMedia, timeout, recordURI, recordFormat)
     _call_ = Tropo::TropoCall.new(_newCall_)
     if $currentCall == nil
       $currentCall =  _call_ 
