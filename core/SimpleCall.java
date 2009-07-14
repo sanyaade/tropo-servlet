@@ -191,12 +191,12 @@ public class SimpleCall implements CallImpl {
       assertReady("prompt", Call.State.ANSWERED);
 
       RecognizerRequestHandle handle = null;
-      if (grammar != null && grammar.length() > 0) {
+      if (notEmpty(grammar)) {
         handle = getASR().startRecognize(GrammarFactory.createGrammar(grammar),
             buildRecognitionProperties(wait, confidence, mode, false, null, null));
       }
 
-      if (ttsOrUrl != null && ttsOrUrl.length() > 0) {
+      if (notEmpty(ttsOrUrl)) {
         getTTS().speak(Utils.genSSML(ttsOrUrl, Configuration.get().isParseSpeechText()), buildSpeakProperties(bargein),
             Configuration.get().getMaxTimeSpeak());
       }
@@ -240,7 +240,7 @@ public class SimpleCall implements CallImpl {
 
       final Properties props = buildRecognitionProperties(wait, confidence, mode, record, recordUri, recordUriMethod);
       RequestHandle handle = null;
-      if (grammar == null || grammar.length() == 0) {
+      if (notEmpty(grammar)) {
         if (record) {
           handle = getASR().startRecord(null, props, maxtime, finalSilence, mediaType);
         }
@@ -256,7 +256,7 @@ public class SimpleCall implements CallImpl {
       }
 
       MrcpTtsResult ttsResult = null;
-      if (ttsOrUrl != null && ttsOrUrl.length() > 0) {
+      if (notEmpty(ttsOrUrl)) {
         ttsResult = getTTS().speak(Utils.genSSML(ttsOrUrl, Configuration.get().isParseSpeechText()),
             buildSpeakProperties(bargein), Configuration.get().getMaxTimeSpeak());
       }
@@ -296,6 +296,10 @@ public class SimpleCall implements CallImpl {
     }
   }
 
+  private boolean notEmpty(String str) {
+    return (str != null && str.length() > 0 && (!str.equalsIgnoreCase("null")));
+  }
+  
   /**
    * format: audio/wav, audio/gsm, audio/au
    */
@@ -304,7 +308,7 @@ public class SimpleCall implements CallImpl {
     LOG.info(this + "->startCallRecording(\"" + filenameOrUrl + "\",\"" + format + "\",\"" + publicKey + "\",\""
         + publicKeyUri + "\")");
     assertReady("startCallRecording", State.ANSWERED);
-    if (filenameOrUrl != null && filenameOrUrl.length() > 0) {
+    if (notEmpty(filenameOrUrl)) {
       final Properties props = buildCallRecordingProperties(format, publicKey, publicKeyUri);
       try {
         getASR().startCallRecording(filenameOrUrl.trim(), props);
@@ -695,10 +699,10 @@ public class SimpleCall implements CallImpl {
       properties.setProperty("Voxeo-Input-Mode", "dtmf voice");
     }
     if (record) {
-      if (recordUri != null) {
+      if (notEmpty(recordUri)) {
         properties.setProperty("Record-Uri", recordUri);
       }
-      if (recordUriMethod != null) {
+      if (notEmpty(recordUriMethod)) {
         properties.setProperty("Voxeo-Record-Uri-Method", recordUriMethod);
       }
     }
