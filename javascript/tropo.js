@@ -422,6 +422,10 @@ TropoCall.prototype.prompt = function (tts, options){
 
   var onSilenceTimeout = null;
   var onRecord = null;
+  var recordURI = '';
+  var recordFormat = 'audio/wav';
+  var httpMethod = 'POST';
+    
 
   if(tts != null){//make sure the ttsOrUrl is at least an empty string before calling IncomingCall
     ttsOrUrl = tts;
@@ -467,6 +471,16 @@ TropoCall.prototype.prompt = function (tts, options){
     }
     onSilenceTimeout = options["onSilenceTimeout"];
     onRecord = options["onRecord"];
+
+    if(options["recordURI"]!=null){
+      recordURI = options["recordURI"] 
+    }
+    if(options["recordFormat"]!=null){
+      recordFormat = options["recordFormat"] 
+    }
+    if(options["httpMethod"]!=null){
+      httpMethod = options["httpMethod"] 
+    }
   }
 
   var event = null;
@@ -474,7 +488,7 @@ TropoCall.prototype.prompt = function (tts, options){
   for (var x=0; x<=repeat; x++){
     try{
       if(record){
-        var result = this._call_.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout );
+        var result = this._call_.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout, recordURI, recordFormat, httpMethod );
         event = new __voxeo__prompt__event("record", result.get('recordURL'), result.get('recordURL'));
         if (onRecord != null) {
           _handleCallBack(onRecord,event);

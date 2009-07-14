@@ -247,6 +247,10 @@ module Tropo
       onSilenceTimeout = nil
       onRecord = nil
   
+      recordURI = ''
+      recordFormat = 'audio/wav'
+      httpMethod = 'POST'
+  
       ttsOrUrl = tts if tts != nil  #make sure the ttsOrUrl is at least an empty string before calling IncomingCall
       #puts ttsOrUrl
   
@@ -274,6 +278,10 @@ module Tropo
         maxTime = _parseTime(options["maxTime"]) if options["maxTime"] != nil
         onSilenceTimeout = options["onSilenceTimeout"]
         onRecord = options["onRecord"]
+        
+        recordURI = options["recordURI"] if options["recordURI"] != nil
+        recordFormat = options["recordFormat"] if options["recordFormat"] != nil
+        httpMethod = options["httpMethod"] if options["httpMethod"] != nil
       end
   
       event  = nil
@@ -282,7 +290,7 @@ module Tropo
         #puts "timeout=#timeoutend repeat=#repeatend x=#xend"
         begin
           if record
-            result = call.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout )
+            result = call.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout, recordURI, recordFormat, httpMethod )
             event = TropoEvent.new("record", result.get('recordURL'), result.get('recordURL'))
             _handleCallBack(onRecord,event) if onRecord != nil
             if grammar != nil && grammar != '' # both choice and record are enabled

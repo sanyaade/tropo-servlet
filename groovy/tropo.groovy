@@ -287,6 +287,10 @@ public class TropoCall {
     def onSilenceTimeout = null
     def onRecord = null
 
+    def recordURI = ''
+    def recordFormat = 'audio/wav'
+    def httpMethod = 'POST'
+
     if(tts != null){//make sure the ttsOrUrl is at least an empty string before calling IncomingCall
       ttsOrUrl = tts
     }
@@ -332,6 +336,16 @@ public class TropoCall {
       }
       onSilenceTimeout = options["onSilenceTimeout"];
       onRecord = options["onRecord"];
+
+      if(options["recordURI"] != null){
+        recordURI = options["recordURI"]; 
+      }
+      if(options["recordFormat"] != null){
+        recordFormat = options["recordFormat"]; 
+      }
+      if(options["httpMethod"] != null){
+        httpMethod = options["httpMethod"]; 
+      }
     }
     
     def event = null
@@ -339,7 +353,7 @@ public class TropoCall {
     for (def x=0; x<=repeat; x++){
       try{
         if(record){
-          def result = _call.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout )
+          def result = _call.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout, recordURI, recordFormat, httpMethod )
           event = new TropoEvent("record", result.get('recordURL'), result.get('recordURL'));
           if (onRecord != null) {
             TropoEvent._handleCallBack(onRecord,event);

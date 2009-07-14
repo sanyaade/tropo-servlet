@@ -231,6 +231,10 @@ class TropoCall :
       onSilenceTimeout = None
       onRecord = None
 
+      recordURI = ''
+      recordFormat = 'audio/wav'
+      httpMethod = 'POST'
+
       if tts != None : #make sure the ttsOrUrl is at least an empty string before calling IncomingCall
         ttsOrUrl = tts 
       #print ttsOrUrl
@@ -276,6 +280,13 @@ class TropoCall :
             onSilenceTimeout = options["onSilenceTimeout"]
         if "onRecord" in options:
             onRecord = options["onRecord"]
+
+        if "recordURI" in options:
+            recordURI = options["recordURI"]
+        if "recordFormat" in options:
+            recordFormat = options["recordFormat"]
+        if "httpMethod" in options:
+            httpMethod = options["httpMethod"]
     
       event  = None
 
@@ -283,7 +294,7 @@ class TropoCall :
         #print "timeout=%s repeat=%d x=%d" % (timeout, repeat, x)
         try:
           if record:
-            result = self._call.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout )
+            result = self._call.promptWithRecord(ttsOrUrl, bargein, grammar, choiceConfidence, choiceMode, timeout, record, beep, maxTime, silenceTimeout, recordURI, recordFormat, httpMethod )
             event = TropoEvent("record", result.get('recordURL'), result.get('recordURL'))
             if onRecord != None:
                _handleCallBack(onRecord,event)

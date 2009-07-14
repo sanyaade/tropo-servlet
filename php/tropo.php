@@ -291,8 +291,8 @@ class TropoCall {
         $repeat    = 0;
         $ttsOrUrl  = "";
         $bargein  = true;
-    $choiceConfidence="0.3";
-    $choiceMode="any"; // (dtmf|speech|any) - defaults to any
+        $choiceConfidence="0.3";
+        $choiceMode="any"; // (dtmf|speech|any) - defaults to any
         
         $onError     = null;
         $onEvent     = null;
@@ -307,7 +307,11 @@ class TropoCall {
         
         $onSilenceTimeout = null;
         $onRecord         = null;
-    
+        
+        $recordURI = '';
+        $recordFormat = 'audio/wav';
+        $httpMethod = 'POST';
+        
         if ($tts != null){//make sure the ttsOrUrl is at least an empty string before calling IncomingCall
             $ttsOrUrl = $tts;
         }
@@ -356,6 +360,16 @@ class TropoCall {
             $onSilenceTimeout = $options["onSilenceTimeout"];
             $onRecord         = $options["onRecord"];
 
+            if($options["recordURI"] != null){
+                $recordURI = $options["recordURI"]; 
+            }
+            if($options["recordFormat"] != null){
+                $recordFormat = $options["recordFormat"]; 
+            }
+            if($options["httpMethod"] != null){
+                $httpMethod = $options["httpMethod"]; 
+            }
+
         } // if ($options)
             
         $___event___ = null;
@@ -372,7 +386,10 @@ class TropoCall {
                                                                 $record, 
                                                                 $beep, 
                                                                 $maxTime, 
-                                                                $silenceTimeout );
+                                                                $silenceTimeout,
+                                                                $recordURI,
+                                                                $recordFormat,
+                                                                $httpMethod );
 
                     $___event___ = new TropoEvent("record", $result['recordURL'], $result['recordURL']);
                     if ($onRecord != null) {
