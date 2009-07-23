@@ -2,3 +2,20 @@ h1. Tropo Servlet
 
 h2. Overview
 
+The Tropo Servlet component provides the mechanism to host scripting languages in Java and interact with SIP Servlet (JSR 289) systems.  This component sits between the Tropo Shims layer, that provides support for specific scripting languages, and the underlying SIP Servlet and media server platform. The Tropo Servlet leverages the capabilities of JRuby, Jython, Quercus and Rhino to run these scripts directly on the Java Virtual Machine.
+
+h2. License
+
+GNU LESSER GENERAL PUBLIC LICENSE - Version 2.1, February 1999
+
+h2. Key Files
+
+* HTTPDriver.java
+
+Provides the HTTP entry point to the servlet.
+
+* SIPDriver.java
+
+Provides the SIP entry point to the servlet.
+
+For additional information please refer to the FILES file in the project.

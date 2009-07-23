@@ -1,9 +1,47 @@
-\app
-\core
-\groovy
-\javascript
-\jruby
-\jython
-\php
-\remote
-\util
+*Directories*
+
+- \app
+
+- \core
+
+- \groovy
+
+Contains the Groovy shim to expose the underlying Java API in Groovy.
+
+- \javascript
+
+Contains the Javascript shim to expose the underlying Java API in Javascript.
+
+- \jruby
+
+Contains the JRuby shim to expose the underlying Java API in JRuby.
+
+- \jython
+
+Contains the Jython shim to expose the underlying Java API in Jython.
+
+- \php
+
+Contains the PHP shim to expose the underlying Java API in PHP.
+
+- \remote
+
+- \util
+
+*Files*
+
+- Configuration.java
+
+- ErrorException.java
+
+- FatalException.java
+
+- HTTPDriver.java
+
+- package-info.java
+
+- ScriptSecurityManager.java
+
+- ServletContextConstants.java
+
+- SIPDriver.java
